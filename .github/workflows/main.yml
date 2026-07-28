@@ -1,23 +1,29 @@
-name: Create Virtual Image with ext3 Filesystem
+name: Create Virtual Image with Ext3 Filesystem
 
 on:
   workflow_dispatch:
     inputs:
       filename:
-        description: 'Name of the image file'
+        description: 'Name der Datei'
         required: true
         default: 'perl544_and_clang_virtual_image'
         type: string
       size_gb:
-        description: 'Size of the image file in GB'
+        description: 'Größe der Datei in GB'
         required: true
         default: 2
         type: number
       release_version:
-        description: 'Version for the release'
+        description: 'Version für das Release'
         required: true
         default: 'latest'
         type: string
+
+# WICHTIG: Erweiterte Berechtigungen für Releases
+permissions:
+  contents: write  # <-- Dies war der Fehler
+  packages: write
+  actions: write
 
 jobs:
   create-image:
@@ -92,32 +98,31 @@ jobs:
         # Kopiere alle Dateien aus ./image Verzeichnis
         if [ -d "${{ github.workspace }}/image" ]; then
           echo "Kopiere Dateien aus ./image Verzeichnis..."
-          sudo cp -rp ${{ github.workspace }}/image/* /mnt/image_mount/ 2>/dev/null || echo "No files to copy found"
-
-          # create work directory with special rights
-          sudo mkdir -p  /mnt/image_mount/work/system/work
+          sudo cp -rp ${{ github.workspace }}/image/* /mnt/image_mount/ 2>/dev/null || echo "Keine Dateien zum Kopieren gefunden"
+          
+          # Erstelle work directory mit speziellen Rechten
+          sudo mkdir -p /mnt/image_mount/work/system/work
           sudo chmod 777 /mnt/image_mount/work
           sudo chmod 755 /mnt/image_mount/work/system
-          sudo chmod 0   /mnt/image_mount/work/system/work
-
-          # fix file permissions and owner
-          sudo chown -R root:root /mnt/image_mount/
-
-          # create the script to print the image version
-          echo 'echo "# $( date +%s ) # Virtual disk created at $( date )"'  | sudo tee /mnt/image_mount/upper/system/bin/print_image_version >/dev/null
-          sudo chmod 755 /mnt/image_mount/upper/system/bin/print_image_version
+          sudo chmod 0 /mnt/image_mount/work/system/work
           
+          # Fix file permissions and owner
+          sudo chown -R root:root /mnt/image_mount/
+          
+          # Erstelle Script zur Anzeige der Image-Version
+          echo 'echo "# $( date +%s ) # Virtual disk created at $( date )"' | sudo tee /mnt/image_mount/upper/system/bin/print_image_version >/dev/null
+          sudo chmod 755 /mnt/image_mount/upper/system/bin/print_image_version
         else
-          echo "Warning: Directory ./image not found"
+          echo "Warnung: ./image Verzeichnis nicht gefunden"
         fi
         
         # Zeige Inhalt des gemounteten Filesystems
-        echo "Content of the filesystem:"
+        echo "Inhalt des Filesystems:"
         sudo ls -la /mnt/image_mount/
 
     - name: Unmount filesystem
       run: |
-        sudo umount /mnt/image_mount || echo "umount faile"
+        sudo umount /mnt/image_mount || echo "Unmount fehlgeschlagen"
         sudo rm -rf /mnt/image_mount
 
     - name: Create release
@@ -147,4 +152,3 @@ jobs:
         sudo umount /mnt/image_mount 2>/dev/null || true
         sudo rm -rf /tmp/image_build
         sudo rm -rf /mnt/image_mount
-
