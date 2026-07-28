@@ -264,7 +264,7 @@ This command only needs to run once.
 The environment for Perl programs is defined in the file **/system/bin/perl_env**. The default directory used for Perl Modules is **/system/usr/share/perl/lib/perl5**.
 
 
-The file system on the virtual disk is **ext3**. To increase the capacity of the virtual disk, use the standard Linux commands on a PC to expand file systems.
+The file system on the virtual disk is **ext4**. To increase the capacity of the virtual disk, use the standard Linux commands on a PC to expand file systems.
 
 
 The documentation for the script **create_overlay_mount.sh** is [here](https://bnsmb.de/android/Documentation_for_the_script_create_overlay_mount.sh.html).
@@ -293,7 +293,7 @@ and create the virtual disk image
 The script creates the virtual disk in /tmp: **/tmp/perl544_and_clang_virtual_image**
 
 
-Alternativley, clone this repository on the GitHub server and use the action "**Create Virtual Image with Ext3 Filesystem**" in the GitHub Web GUI to create the virtual disk image direct on the GitHub servers.
+Alternativley, clone this repository on the GitHub server and use the action "**Create Virtual Image with Ext4 Filesystem**" in the GitHub Web GUI to create the virtual disk image direct on the GitHub servers.
 This action creates a new release with a virtual disk image with the current contents of the GitHub repository.
 
 
