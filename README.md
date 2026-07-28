@@ -223,6 +223,29 @@ wget2                          2.2.0-v1.0.0.0
 (see the [documentation for the Magisk modules](https://bnsmb.de/Magisk_Modules.html) for implementation details for the various tools)
 
 
+**Trouble Shooting**
+
+If a non-root user, such as **shell**, can no longer access the files in **/system/bin** after creating the overlay mount, you have most likely used an old version of the **create_overlay_mount.sh** script, and the SELinux context for the files in the overlay filesystem is incorrect.
+
+If you still have a shell open with root access, you can fix this error with the following command:
+```
+ find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -print0 |
+    xargs -0 chcon u:object_r:system_file:s0
+```
+The **find** command modifies the files on the virtual disk and should therefore only be run once.
+
+Another work around without modifying the files in the virtual disk image is to temporary disable SELinux by executing as user **root**:
+```
+setenforce 0
+```
+
+If you do not have a shell with **root** access open, you must restart the smartphone via the GUI on the phone.
+
+However,  it's strongly recommended to update the script **create_overlay_mount.sh** to the current version to avoid errors like this in the future.
+
+Files added in Android to the virtual disk are always created by the Android OS with a valid SELinux context.
+
+
 **Notes**
 
 In most cases, you'll need to reboot the phone to umount the overlay mount for **/system**.
