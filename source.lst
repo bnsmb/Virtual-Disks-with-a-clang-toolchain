@@ -1,0 +1,26 @@
+As of
+
+28.07.2026
+
+The files on the virtual disk image are from these Magisk modules
+
+Magisk Module                  Version
+------------------------------------------------
+autoconf tools                 1.3.2.1
+bash                           5.2.0_3-v1.1.1 `
+binutils                       2.45-v1.0.0
+bison_flex                     1.2.0
+clang19                        19.0.0git-v1.2.3
+cmake                          4.3.0-v1.0.0  
+curl                           8.17.0-v1.0.0.0
+DebugTools                     9.3.4.10
+gdb17                          17.1_v1.0.0
+git                            2.53.1-v1.1.0
+man                            2.13-v1.0.0
+myscripts                      1.4.19.0
+openssl                        3.5.7-v1.1.0
+perl544                        5.44.0-v1.1.1
+python3                        3.14.v2.2.0
+rsync                          3.4.4-v1.3.0
+vim                            9.1.672
+wget2                          2.2.0-v1.0.0.0
