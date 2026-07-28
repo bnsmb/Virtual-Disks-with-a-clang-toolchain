@@ -104,7 +104,7 @@ jobs:
           sudo chown -R root:root /mnt/image_mount/
 
           # create the script to print the image version
-          echo 'echo "# $( date +%s ) # Virtual disk creatded at $( date )"'  | sudo tee /mnt/image_mount/system/bin/print_image_version >/dev/null
+          echo 'echo "# $( date +%s ) # Virtual disk created at $( date )"'  | sudo tee /mnt/image_mount/upper/system/bin/print_image_version >/dev/null
           sudo chmod 755 /mnt/image_mount/system/bin/print_image_version
           
         else
