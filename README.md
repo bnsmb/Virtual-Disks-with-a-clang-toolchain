@@ -1,8 +1,11 @@
 # Virtual-Disks-with-a-clang-toolchain
 
-This repository contains a virtual Disk with a **clang19 toolchain** for Android on devices with **arm64** CPUs.
+This repository contains a virtual Disk with a **clang19 toolchain** for Android on devices with **arm64** CPUs. 
+
 
 <h2>Usage instructions</h2>
+
+To use this virtual disk, **root** access is required on the phone.
 
 To use one of the released images in this repository, execute these steps:
 
@@ -256,7 +259,7 @@ and create the virtual disk image
 The script creates the virtual disk in /tmp: **/tmp/perl544_and_clang_virtual_image**
 
 
-Alternativley, clone this repository on the GitHub server and use the action "**Create Virtual Image with Ext3 Filesystem**" to create the virtual disk image direct on the GitHub servers.
+Alternativley, clone this repository on the GitHub server and use the action "**Create Virtual Image with Ext3 Filesystem**" in the GitHub Web GUI to create the virtual disk image direct on the GitHub servers.
 This action creates a new release with a virtual disk image with the current contents of the GitHub repository.
 
 
