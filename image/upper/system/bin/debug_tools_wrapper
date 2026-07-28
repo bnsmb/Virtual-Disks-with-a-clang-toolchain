@@ -1,0 +1,37 @@
+#!/system/bin/sh
+#
+# Note: As of 21.06.2025 this wrapper is not used (anymore)
+# 
+#
+
+if [ ${0##*/} = debug_tools_wrapper ] ; then
+  echo "ERROR: Do not call this script - this is only a wrapper used to call the executables with a well defined enviroment"
+  exit 254
+fi
+
+
+# settings for all binaries
+# 
+if [ "${TERMINFO}"x = ""x ] ; then
+  if [ -d /system_ext/etc/terminfo ] ; then
+    export TERMINFO="/system_ext/etc/terminfo"
+  elif [ -d /system/etc/terminfo ] ; then
+    export TERMINFO="/system/etc/terminfo"
+  fi
+fi
+
+if [ -d /system/usr/lib ] ; then
+  export LD_LIBRARY_PATH=/system/usr/lib
+fi
+
+
+THIS_SCRIPT="${0##*/}"
+
+[[ ${THIS_SCRIPT} == *.linux_utils ]] && TARGET_BINARY=${THIS_SCRIPT%*.linux_utils} || TARGET_BINARY="${THIS_SCRIPT}"
+
+if [ ! -z ${VERBOSE} ] ; then
+  echo "Eexcuting: /system/usr/bin/${TARGET_BINARY} ${CMD_PARAMETER} ${1+\"$@\"}' "
+fi
+
+eval 'exec  /system/usr/bin/${TARGET_BINARY} ${CMD_PARAMETER} ${1+"$@"}'
+

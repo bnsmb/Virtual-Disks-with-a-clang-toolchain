@@ -1,0 +1,37 @@
+
+# LD_LIBRARY_PATH is only required for some of the object files in this Magisk Module
+#
+export LD_LIBRARY_PATH=/system/usr/lib:${LD_LIBRARY_PATH}
+
+export PATH=$PATH:/system/usr/bin
+
+PERL_HOME_DIR="/system/usr/share/perl"
+
+if [ "${HOME}"x = ""x -o "${HOME}"x = "/"x ] ; then
+  export HOME="${PERL_HOME_DIR}"
+else
+  PERL_HOME_DIR="${HOME}"
+fi
+
+if [ "${TMPDIR}"x = ""x ] ; then
+   export TMPDIR=/data/local/tmp
+fi
+
+PERL5_VERSION_LIB="/system/usr/lib/perl5/system/usr/lib/perl5/5.44.0"
+
+
+export PERL5LIB="${PERL_HOME_DIR}/lib/perl5:${PERL_HOME_DIR}lib/perl5/aarch64-linux-android:/lib/perl5:${PERL5_VERSION_LIB}"
+
+export PERL_LOCAL_LIB_ROOT="${PERL_HOME_DIR}"
+
+export PERL_MB_OPT="--install_base ${PERL_HOME_DIR}"
+export PERL_MM_OPT="INSTALL_BASE=${PERL_HOME_DIR}"
+
+USER_DEFINED_PERL_INIT_FILE="${PERL_HOME_DIR}/perl_env"
+
+if [ -r "${USER_DEFINED_PERL_INIT_FILE}" ] ; then
+  echo "${USER_DEFINED_PERL_INIT_FILE} found - now executing it ..."
+  echo
+  source "${USER_DEFINED_PERL_INIT_FILE}"
+fi
+

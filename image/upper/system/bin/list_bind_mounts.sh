@@ -1,0 +1,1 @@
+../usr/bin/list_bind_mounts.sh

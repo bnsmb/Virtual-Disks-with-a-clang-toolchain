@@ -1,0 +1,12 @@
+#!/system/bin/sh
+
+. /system/bin/perl_env
+
+if [ ${0##*/} = perl_wrapper ] ; then
+  echo "ERROR: Do not call this script - this is only a wrapper used for the Perl executables"
+  exit 254
+fi
+
+
+eval 'exec  /system/usr/bin/${0##*/}  ${1+"$@"}'
+

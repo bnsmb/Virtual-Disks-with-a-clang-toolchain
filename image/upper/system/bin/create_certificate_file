@@ -1,0 +1,26 @@
+#!/system/bin/sh
+
+CERTIFICATE_FILE="/system/etc/security/ca-certificates.crt"
+CERTIFICATE_BACKUP_FILE="${CERTIFICATE_FILE}.$$.bak"
+
+echo "Creating the certificate file ${CERTIFICATE_FILE} ..."
+
+echo "Press <return> to continue or <CTRL-C> to abort "
+read USER_INPUT
+
+if [ -r "${CERTIFICATE_FILE}" ] ; then
+  echo "Creating a backup of the existing file \"${CERTIFICATE_FILE}\" in \"${CERTIFICATE_BACKUP_FILE}\" ..."
+  cp "${CERTIFICATE_FILE}" "${CERTIFICATE_BACKUP_FILE}" || exit $?
+fi
+
+echo "Creating the new certificate file ..."
+for i in /system/etc/security/cacerts*/*.0; do
+  printf "." 
+  echo "$(sed -n "/BEGIN CERTIFICATE/,/END CERTIFICATE/p" $i)" >>"${CERTIFICATE_FILE}"
+done
+printf "\n"
+echo "done:"
+echo
+ls -l "${CERTIFICATE_FILE}"
+echo
+

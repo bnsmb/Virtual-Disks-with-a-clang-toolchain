@@ -1,0 +1,12 @@
+echo
+echo "Testing the C compiler ..."
+echo
+clang ${CFLAGS} ${LDFLAGS} -o /data/local/tmp/helloworld_in_c /system/usr/share/clang_examples/helloworld_in_c.c  && /data/local/tmp/helloworld_in_c
+
+echo 
+echo "Testing the C++ compiler ..."
+echo
+clang++ ${CXXFLAGS}  ${LDFLAGS} -o /data/local/tmp/helloworld_in_c++ /system/usr/share/clang_examples/helloworld_in_c++.cpp && /data/local/tmp/helloworld_in_c++
+
+echo
+

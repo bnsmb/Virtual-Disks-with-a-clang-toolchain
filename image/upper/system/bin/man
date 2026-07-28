@@ -1,0 +1,1 @@
+MANPATH=${MANPATH}:/data/local/tmp/sysroot/usr/share/man:/system/usr/share/man TERMINFO=${TERMINFO:=/system/usr/share/terminfo} PATH=${PATH}:/system/usr/bin exec ${0%/*}/${0##*/}.bin ${1+"$@"}

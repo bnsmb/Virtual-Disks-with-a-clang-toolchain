@@ -1,0 +1,105 @@
+#!/system/bin/sh
+[ ! -z ${DEBUG} ] && set -x
+
+CUR_NAME="${0##*/}"
+
+# variable predefined for future use
+# 
+CMD_PARAMETER=""
+
+if [[ ${CUR_NAME} == *wrapper ]] ; then
+  echo "ERROR: Do not call this script - this is only a wrapper used to call the executables with a well defined enviroment"
+  exit 254
+fi
+
+# set this variable to any non empty string to suppress creating cache files with the compiled code
+#
+# PYTHONDONTWRITEBYTECODE=yes
+
+# home directory to use
+#
+export HOME="/data/local/tmp/home"
+
+# define the directory for compiled python files 
+#
+if [ "${PYTHONDONTWRITEBYTECODE}"x = ""x ] ; then
+
+  export PYTHONPYCACHEPREFIX="${HOME}/python/cache"
+
+# create the directory for the cache if necessary
+#
+  mkdir -p "${PYTHONPYCACHEPREFIX}"
+fi
+
+# directory tree with the python files
+#
+PYTHON_BASE_DIR="/system"
+PYTHON_BIN_DIR="${PYTHON_BASE_DIR}/usr/bin"
+PYTHON_LIB_DIR="${PYTHON_BASE_DIR}/usr/lib"
+
+
+# set TERMINFO if not already set and the terminfo directory exists
+#
+if [ "${TERMINFO}"x = ""x ] ; then
+  if [ -d /system/etc/terminfo ] ; then
+    export TERMINFO="/system/etc/terminfo"
+  elif [ -d /system_ext/etc/terminfo ] ; then
+    export TERMINFO="/system_ext/etc/terminfo"
+  fi
+fi
+
+if [[ " :${LD_LIBRARY_PATH}: " != *:${PYTHON_LIB_DIR}:* ]] ; then
+  export LD_LIBRARY_PATH="${PYTHON_LIB_DIR}:${LD_LIBRARY_PATH}"
+fi
+
+# add the additional directory to the LD_LIBRARY_PATH if it exists
+#
+if [ -d ${HOME}/libs ] ; then
+  if [[ " :${LD_LIBRARY_PATH}: " != *:${HOME}/libs:* ]] ; then
+    export LD_LIBRARY_PATH="${HOME}/libs:${PYTHON_LIB_DIR}"
+  fi
+fi
+
+# use the SSL certificates from the OS
+#
+if [ "${SSL_CERT_DIR}"x = ""x ] ; then
+  export SSL_CERT_DIR="/system/etc/security/cacerts"
+fi
+
+
+if [ "${SSL_CERT_FILE}"x = ""x ] ; then
+  if [ -r "${HOME}/ca-certificates.crt" ] ; then
+    export SSL_CERT_FILE="${HOME}/ca-certificates.crt"
+  fi
+fi
+
+# to disable SSL verification in Python use
+# export PYTHONHTTPSVERIFY=0
+#
+
+# define the target directory for Python modules installed with pip
+#
+if [ "${PIP_TARGET}"x = ""x ] ; then
+  export PIP_TARGET="${HOME}/python/site-packages"
+fi
+
+CUR_BINARY="${PYTHON_BIN_DIR}/${CUR_NAME}"
+
+if [ ! -x "${CUR_BINARY}" ] ; then
+  echo "Executable \"${CUR_BINARY}\" not found"
+  exit 127
+fi
+
+# execute the file with the user defined environment variables if it exists
+#
+if [ -r /data/local/tmp/home/python_init.sh ] ; then
+  . /data/local/tmp/home/python_init.sh
+fi
+
+# and finally execute the "real" Python executable
+#
+eval 'exec  ${CUR_BINARY} ${CMD_PARAMETER} ${1+"$@"}'
+
+# eval 'exec  ${0%/*}/${0##*/}.bin ${CMD_PARAMETER} ${1+"$@"}'
+
+
