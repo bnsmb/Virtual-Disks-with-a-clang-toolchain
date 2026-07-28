@@ -1,6 +1,6 @@
 # Virtual-Disks-with-a-clang-toolchain
 
-This repository contains a virtual Disk with a **clang19 toolchain** for Android on devices with **arm64** CPUs. 
+This repository contains the files for a virtual disk with a **clang19 toolchain** for Android on devices with **arm64** CPUs, which can be used as an overlay mount.
 
 
 <h2>Usage instructions</h2>
@@ -35,9 +35,7 @@ To enable the overlay mount, open an adb shell and execute as user **root**:
 <summary><b>/data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system</b></summary>
 
  ```
-/data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system 
-
-ASUS_I006D:/ # /data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system
+/ASUS_I006D:/ # /data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system
 The image file "/data/local/tmp/perl544_and_clang_virtual_image" already exists - there should already be a filesystem
 Creating the directory "/dev/ov" ...
 Mounting the imagefile "/data/local/tmp/perl544_and_clang_virtual_image" to "/dev/ov" ...
@@ -47,6 +45,8 @@ Creating and mounting the directories for the overlay mount for "/system" ...
 Creating the overlay mount for "/system" ...
 Creating the bind mount "/system"...
 Checking the overlay mount for "/system" ...
+Now correcting the SELinux context for all files and directories in the overlay filesystem with the SELinux context "u:object_r:unlabeled:s0" to "u:object_r:system_file:s0" ...
+... SELinux context for the files successfully modified
 
 Summary:
 --------
@@ -55,8 +55,7 @@ Summary:
 
   /system
 
-ASUS_I006D:/ #
-
+ASUS_I006D:/ # 
 ```
 </details>
 
@@ -274,9 +273,13 @@ On phones without root access, you can use the [clang19 toolchain](https://bnsmb
 
 <hr></hr>
 
+<a name="build_instructions">
 <h2>Build instructions</h2>
 
-To build your own image file execute these steps
+To build your own virtual disk image, create a fork of this repository in GitHub and modify or add the files in that repository. When done, create a virtual disk image with the files in your repository using the Action "**Create Virtual Image with Ext4 Filesystem**" in the GitHub WebGUI. This action creates a new release with a virtual disk image with the current contents of the GitHub repository.
+
+
+Or, if you you want to create the virtual disk local on your PC running Linux, execute these steps:
 
 Clone the repository 
 ```
@@ -286,14 +289,14 @@ Change the working directory to the local git repository
 ```
 cd Virtual-Disks-with-a-clang-toolchain/
 ```
-and create the virtual disk image 
+add or modify the files in your local repository if necessary, and create the virtual disk image 
 ```
 ./create_virtual_disk.sh
 ```
 The script creates the virtual disk in /tmp: **/tmp/perl544_and_clang_virtual_image**
 
-
-Alternativley, clone this repository on the GitHub server and use the action "**Create Virtual Image with Ext4 Filesystem**" in the GitHub Web GUI to create the virtual disk image direct on the GitHub servers.
-This action creates a new release with a virtual disk image with the current contents of the GitHub repository.
-
-
+You should only modify or add files in the directory **./image/upper/system** in the repository, this is the overlay for **/system** on the phone. Do **NOT** add files to the other directories in the repository.
+To "delete" a file, create a character device with major=0 and minor=0 for that file in the directory **./upper/system**. E.g. to delete the file **/etc/hosts**:
+```
+mknod  ./dev/ov/upper/system/etc/hosts c 0 0                                                                                                                                              
+```
