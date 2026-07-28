@@ -1,6 +1,6 @@
 # Virtual-Disks-with-a-clang-toolchain
 
-This repository contains a virtual Disk with a **clang19 toolchain** for Android on devices with **arm64** CPUs. 
+This repository contains the files for a virtual disk with a **clang19 toolchain** for Android on devices with **arm64** CPUs, which can be used as an overlay mount.
 
 
 <h2>Usage instructions</h2>
@@ -13,7 +13,18 @@ Download the **perl544_and_clang_virtual_image.gz** file from the releases; copy
 
 If not already done, copy the script **create_overlay_mount.sh** to the phone (either from this repository or from the repository with scripts [https://github.com/bnsmb/scripts-for-Android](https://github.com/bnsmb/scripts-for-Android)) and make it executable.
 
-Then open an adb shell and execute as user **root**:
+**Note:**
+
+The **version 1.4.0** or newer of the script **create_overlay_mount.sh** is required for this usage. 
+
+Use the command
+```
+./create_overlay_mount.sh -V
+```
+to print the version of the script
+
+
+To enable the overlay mount, open an adb shell and execute as user **root**:
 ```
 /data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system
 ```
@@ -24,9 +35,7 @@ Then open an adb shell and execute as user **root**:
 <summary><b>/data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system</b></summary>
 
  ```
-/data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system 
-
-ASUS_I006D:/ # /data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system
+/ASUS_I006D:/ # /data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system
 The image file "/data/local/tmp/perl544_and_clang_virtual_image" already exists - there should already be a filesystem
 Creating the directory "/dev/ov" ...
 Mounting the imagefile "/data/local/tmp/perl544_and_clang_virtual_image" to "/dev/ov" ...
@@ -36,6 +45,8 @@ Creating and mounting the directories for the overlay mount for "/system" ...
 Creating the overlay mount for "/system" ...
 Creating the bind mount "/system"...
 Checking the overlay mount for "/system" ...
+Now correcting the SELinux context for all files and directories in the overlay filesystem with the SELinux context "u:object_r:unlabeled:s0" to "u:object_r:system_file:s0" ...
+... SELinux context for the files successfully modified
 
 Summary:
 --------
@@ -44,8 +55,7 @@ Summary:
 
   /system
 
-ASUS_I006D:/ #
-
+ASUS_I006D:/ # 
 ```
 </details>
 
@@ -212,6 +222,29 @@ wget2                          2.2.0-v1.0.0.0
 (see the [documentation for the Magisk modules](https://bnsmb.de/Magisk_Modules.html) for implementation details for the various tools)
 
 
+**Trouble Shooting**
+
+If a non-root user, such as **shell**, can no longer access the files in **/system/bin** after creating the overlay mount, you have most likely used an old version of the **create_overlay_mount.sh** script, and the SELinux context for the files in the overlay filesystem is incorrect.
+
+If you still have a shell open with root access, you can fix this error with the following command:
+```
+ find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -print0 |
+    xargs -0 chcon u:object_r:system_file:s0
+```
+The **find** command modifies the files on the virtual disk and should therefore only be run once.
+
+Another work around without modifying the files in the virtual disk image is to temporary disable SELinux by executing as user **root**:
+```
+setenforce 0
+```
+
+If you do not have a shell with **root** access open, you must restart the smartphone via the GUI on the phone.
+
+However,  it's strongly recommended to update the script **create_overlay_mount.sh** to the current version to avoid errors like this in the future.
+
+Files added in Android to the virtual disk are always created by the Android OS with a valid SELinux context.
+
+
 **Notes**
 
 In most cases, you'll need to reboot the phone to umount the overlay mount for **/system**.
@@ -230,7 +263,7 @@ This command only needs to run once.
 The environment for Perl programs is defined in the file **/system/bin/perl_env**. The default directory used for Perl Modules is **/system/usr/share/perl/lib/perl5**.
 
 
-The file system on the virtual disk is **ext3**. To increase the capacity of the virtual disk, use the standard Linux commands on a PC to expand file systems.
+The file system on the virtual disk is **ext4**. To increase the capacity of the virtual disk, use the standard Linux commands on a PC to expand file systems.
 
 
 The documentation for the script **create_overlay_mount.sh** is [here](https://bnsmb.de/android/Documentation_for_the_script_create_overlay_mount.sh.html).
@@ -240,9 +273,13 @@ On phones without root access, you can use the [clang19 toolchain](https://bnsmb
 
 <hr></hr>
 
+<a name="build_instructions">
 <h2>Build instructions</h2>
 
-To build your own image file execute these steps
+To build your own virtual disk image, create a fork of this repository in GitHub and modify or add the files in that repository. When done, create a virtual disk image with the files in your repository using the Action "**Create Virtual Image with Ext4 Filesystem**" in the GitHub WebGUI. This action creates a new release with a virtual disk image with the current contents of the GitHub repository.
+
+
+Or, if you you want to create the virtual disk local on your PC running Linux, execute these steps:
 
 Clone the repository 
 ```
@@ -252,14 +289,14 @@ Change the working directory to the local git repository
 ```
 cd Virtual-Disks-with-a-clang-toolchain/
 ```
-and create the virtual disk image 
+add or modify the files in your local repository if necessary, and create the virtual disk image 
 ```
 ./create_virtual_disk.sh
 ```
 The script creates the virtual disk in /tmp: **/tmp/perl544_and_clang_virtual_image**
 
-
-Alternativley, clone this repository on the GitHub server and use the action "**Create Virtual Image with Ext3 Filesystem**" in the GitHub Web GUI to create the virtual disk image direct on the GitHub servers.
-This action creates a new release with a virtual disk image with the current contents of the GitHub repository.
-
-
+You should only modify or add files in the directory **./image/upper/system** in the repository, this is the overlay for **/system** on the phone. Do **NOT** add files to the other directories in the repository.
+To "delete" a file, create a character device with major=0 and minor=0 for that file in the directory **./upper/system**. E.g. to delete the file **/etc/hosts**:
+```
+mknod  ./dev/ov/upper/system/etc/hosts c 0 0                                                                                                                                              
+```

@@ -1,4 +1,4 @@
-name: Create Virtual Image with Ext3 Filesystem
+name: Create Virtual Image with Ext4 Filesystem
 
 on:
   workflow_dispatch:
@@ -80,9 +80,9 @@ jobs:
         echo "Creating image file with size ${{ env.SIZE_MB }} MB..."
         dd if=/dev/zero of=${{ env.FILENAME }} bs=1M count=${{ env.SIZE_MB }} status=progress
         
-        # Create ext3 filesystem
-        echo "Creating ext3 filesystem..."
-        sudo mkfs.ext3 -F ${{ env.FILENAME }}
+        # Create ext4 filesystem
+        echo "Creating ext4 filesystem..."
+        sudo mkfs.ext4 -F ${{ env.FILENAME }}
         
         echo "TEMP_DIR=/tmp/image_build" >> $GITHUB_ENV
 
