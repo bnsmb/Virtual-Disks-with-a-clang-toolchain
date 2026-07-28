@@ -4,24 +4,23 @@ on:
   workflow_dispatch:
     inputs:
       filename:
-        description: 'Name der Datei'
+        description: 'Name of the image file'
         required: true
         default: 'perl544_and_clang_virtual_image'
         type: string
       size_gb:
-        description: 'Größe der Datei in GB'
+        description: 'Size of the image file in GB'
         required: true
         default: 2
         type: number
       release_version:
-        description: 'Version für das Release'
+        description: 'Version for the release (use "latest" for auto-increment)'
         required: true
         default: 'latest'
         type: string
 
-# WICHTIG: Erweiterte Berechtigungen für Releases
 permissions:
-  contents: write  # <-- Dies war der Fehler
+  contents: write
   packages: write
   actions: write
 
@@ -47,22 +46,22 @@ jobs:
         SIZE_GB="${{ github.event.inputs.size_gb }}"
         RELEASE_VERSION="${{ github.event.inputs.release_version }}"
         
-        # Berechne Größe in MB (ext3 benötigt etwas Platz)
-        SIZE_MB=$((SIZE_GB * 1024))
+        # Calculate size in MB with 50MB safety margin to stay under 2GB limit
+        SIZE_MB=$((SIZE_GB * 1024 - 50))
         
         echo "FILENAME=$FILENAME" >> $GITHUB_ENV
         echo "SIZE_MB=$SIZE_MB" >> $GITHUB_ENV
         
-        # Bestimme Release Version
+        # Determine release version
         if [ "$RELEASE_VERSION" = "latest" ]; then
-          # Hole die neueste Release Version und erhöhe um 1
+          # Get the latest release version and increment by 1
           LATEST_RELEASE=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "v0.0.0")
-          # Entferne 'v' prefix und erhöhe Version
+          # Remove 'v' prefix and increment version
           VERSION_NUM=${LATEST_RELEASE#v}
           if [ -z "$VERSION_NUM" ]; then
             VERSION_NUM="0.0.0"
           fi
-          # Erhöhe Patch Version um 1
+          # Increment patch version by 1
           IFS='.' read -r major minor patch <<< "$VERSION_NUM"
           NEW_PATCH=$((patch + 1))
           RELEASE_VERSION="v$major.$minor.$NEW_PATCH"
@@ -72,15 +71,17 @@ jobs:
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Create temporary directory
+    - name: Create temporary directory and image file
       run: |
         mkdir -p /tmp/image_build
         cd /tmp/image_build
         
-        # Erstelle leere Datei mit der angegebenen Größe
+        # Create empty file with specified size
+        echo "Creating image file with size ${{ env.SIZE_MB }} MB..."
         dd if=/dev/zero of=${{ env.FILENAME }} bs=1M count=${{ env.SIZE_MB }} status=progress
         
-        # Erstelle ext3 Filesystem
+        # Create ext3 filesystem
+        echo "Creating ext3 filesystem..."
         sudo mkfs.ext3 -F ${{ env.FILENAME }}
         
         echo "TEMP_DIR=/tmp/image_build" >> $GITHUB_ENV
@@ -89,41 +90,67 @@ jobs:
       run: |
         cd /tmp/image_build
         
-        # Erstelle Mount-Punkt
+        # Create mount point
         sudo mkdir -p /mnt/image_mount
         
-        # Mounte die Datei
+        # Mount the image file
+        echo "Mounting image file..."
         sudo mount -o loop ${{ env.FILENAME }} /mnt/image_mount
         
-        # Kopiere alle Dateien aus ./image Verzeichnis
+        # Copy all files from ./image directory
         if [ -d "${{ github.workspace }}/image" ]; then
-          echo "Kopiere Dateien aus ./image Verzeichnis..."
-          sudo cp -rp ${{ github.workspace }}/image/* /mnt/image_mount/ 2>/dev/null || echo "Keine Dateien zum Kopieren gefunden"
+          echo "Copying files from ./image directory..."
+          sudo cp -rp ${{ github.workspace }}/image/* /mnt/image_mount/ 2>/dev/null || echo "No files to copy found"
           
-          # Erstelle work directory mit speziellen Rechten
+          # Create work directory with special permissions
+          echo "Setting up work directories with special permissions..."
           sudo mkdir -p /mnt/image_mount/work/system/work
           sudo chmod 777 /mnt/image_mount/work
           sudo chmod 755 /mnt/image_mount/work/system
           sudo chmod 0 /mnt/image_mount/work/system/work
           
           # Fix file permissions and owner
+          echo "Setting file ownership to root..."
           sudo chown -R root:root /mnt/image_mount/
           
-          # Erstelle Script zur Anzeige der Image-Version
+          # Create script to display image version
           echo 'echo "# $( date +%s ) # Virtual disk created at $( date )"' | sudo tee /mnt/image_mount/upper/system/bin/print_image_version >/dev/null
           sudo chmod 755 /mnt/image_mount/upper/system/bin/print_image_version
+          
+          echo "Files copied successfully."
         else
-          echo "Warnung: ./image Verzeichnis nicht gefunden"
+          echo "Warning: Directory ./image not found - skipping file copy"
         fi
         
-        # Zeige Inhalt des gemounteten Filesystems
-        echo "Inhalt des Filesystems:"
+        # Display content of mounted filesystem
+        echo "Content of the filesystem:"
         sudo ls -la /mnt/image_mount/
 
     - name: Unmount filesystem
       run: |
-        sudo umount /mnt/image_mount || echo "Unmount fehlgeschlagen"
+        echo "Unmounting filesystem..."
+        sudo umount /mnt/image_mount || echo "Unmount failed - continuing anyway"
         sudo rm -rf /mnt/image_mount
+
+    - name: Compress image file
+      run: |
+        cd /tmp/image_build
+        
+        # Compress the image file with gzip
+        echo "Compressing image file with gzip..."
+        gzip -c ${{ env.FILENAME }} > ${{ env.FILENAME }}.gz
+        
+        # Display size information
+        ORIGINAL_SIZE=$(du -h ${{ env.FILENAME }} | cut -f1)
+        COMPRESSED_SIZE=$(du -h ${{ env.FILENAME }}.gz | cut -f1)
+        echo "Original size: $ORIGINAL_SIZE"
+        echo "Compressed size: $COMPRESSED_SIZE"
+        
+        # Remove original file to save space
+        rm ${{ env.FILENAME }}
+        
+        # Set compressed filename for upload
+        echo "COMPRESSED_FILENAME=${{ env.FILENAME }}.gz" >> $GITHUB_ENV
 
     - name: Create release
       id: create_release
@@ -136,19 +163,21 @@ jobs:
         draft: false
         prerelease: false
 
-    - name: Upload image file to release
+    - name: Upload compressed image to release
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: /tmp/image_build/${{ env.FILENAME }}
-        asset_name: ${{ env.FILENAME }}
-        asset_content_type: application/octet-stream
+        asset_path: /tmp/image_build/${{ env.COMPRESSED_FILENAME }}
+        asset_name: ${{ env.COMPRESSED_FILENAME }}
+        asset_content_type: application/gzip
 
-    - name: Cleanup
+    - name: Cleanup temporary files
       if: always()
       run: |
+        echo "Cleaning up temporary files..."
         sudo umount /mnt/image_mount 2>/dev/null || true
         sudo rm -rf /tmp/image_build
         sudo rm -rf /mnt/image_mount
+        echo "Cleanup completed."
