@@ -105,7 +105,7 @@ jobs:
 
           # create the script to print the image version
           echo 'echo "# $( date +%s ) # Virtual disk created at $( date )"'  | sudo tee /mnt/image_mount/upper/system/bin/print_image_version >/dev/null
-          sudo chmod 755 /mnt/image_mount/system/bin/print_image_version
+          sudo chmod 755 /mnt/image_mount/upper/system/bin/print_image_version
           
         else
           echo "Warning: Directory ./image not found"
