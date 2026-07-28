@@ -1,0 +1,145 @@
+name: Create Virtual Image with ext3 Filesystem
+
+on:
+  workflow_dispatch:
+    inputs:
+      filename:
+        description: 'Name of the image file'
+        required: true
+        default: 'perl544_and_clang_virtual_image'
+        type: string
+      size_gb:
+        description: 'Size of the image file in GB'
+        required: true
+        default: 2
+        type: number
+      release_version:
+        description: 'Version for the release'
+        required: true
+        default: 'latest'
+        type: string
+
+jobs:
+  create-image:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y e2fsprogs
+
+    - name: Setup variables
+      id: vars
+      run: |
+        FILENAME="${{ github.event.inputs.filename }}"
+        SIZE_GB="${{ github.event.inputs.size_gb }}"
+        RELEASE_VERSION="${{ github.event.inputs.release_version }}"
+        
+        # Berechne Größe in MB (ext3 benötigt etwas Platz)
+        SIZE_MB=$((SIZE_GB * 1024))
+        
+        echo "FILENAME=$FILENAME" >> $GITHUB_ENV
+        echo "SIZE_MB=$SIZE_MB" >> $GITHUB_ENV
+        
+        # Bestimme Release Version
+        if [ "$RELEASE_VERSION" = "latest" ]; then
+          # Hole die neueste Release Version und erhöhe um 1
+          LATEST_RELEASE=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "v0.0.0")
+          # Entferne 'v' prefix und erhöhe Version
+          VERSION_NUM=${LATEST_RELEASE#v}
+          if [ -z "$VERSION_NUM" ]; then
+            VERSION_NUM="0.0.0"
+          fi
+          # Erhöhe Patch Version um 1
+          IFS='.' read -r major minor patch <<< "$VERSION_NUM"
+          NEW_PATCH=$((patch + 1))
+          RELEASE_VERSION="v$major.$minor.$NEW_PATCH"
+        fi
+        
+        echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create temporary directory
+      run: |
+        mkdir -p /tmp/image_build
+        cd /tmp/image_build
+        
+        # Erstelle leere Datei mit der angegebenen Größe
+        dd if=/dev/zero of=${{ env.FILENAME }} bs=1M count=${{ env.SIZE_MB }} status=progress
+        
+        # Erstelle ext3 Filesystem
+        sudo mkfs.ext3 -F ${{ env.FILENAME }}
+        
+        echo "TEMP_DIR=/tmp/image_build" >> $GITHUB_ENV
+
+    - name: Mount and copy files
+      run: |
+        cd /tmp/image_build
+        
+        # Erstelle Mount-Punkt
+        sudo mkdir -p /mnt/image_mount
+        
+        # Mounte die Datei
+        sudo mount -o loop ${{ env.FILENAME }} /mnt/image_mount
+        
+        # Kopiere alle Dateien aus ./image Verzeichnis
+        if [ -d "${{ github.workspace }}/image" ]; then
+          echo "Kopiere Dateien aus ./image Verzeichnis..."
+          sudo cp -rp ${{ github.workspace }}/image/* /mnt/image_mount/ 2>/dev/null || echo "No files to copy found"
+
+          # fix file permissions and owner
+          sudo chown -R root:root /mnt/image_mount/
+          sudo chmod 0 /mnt/image_mount/work/system/work
+
+          # create the script to print the image version
+          echo 'echo "# $( date +%s ) # Virtual disk creatded at $( date )"'  | sudo tee /mnt/image_mount/system/bin/print_image_version >/dev/null
+          sudo chmod 755 /mnt/image_mount/system/bin/print_image_version
+          
+        else
+          echo "Warning: Directory ./image not found"
+        fi
+        
+        # Zeige Inhalt des gemounteten Filesystems
+        echo "Content of the filesystem:"
+        sudo ls -la /mnt/image_mount/
+
+    - name: Unmount filesystem
+      run: |
+        sudo umount /mnt/image_mount || echo "umount faile"
+        sudo rm -rf /mnt/image_mount
+
+    - name: Create release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.RELEASE_VERSION }}
+        release_name: Release ${{ env.RELEASE_VERSION }}
+        draft: false
+        prerelease: false
+
+    - name: Upload image file to release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: /tmp/image_build/${{ env.FILENAME }}
+        asset_name: ${{ env.FILENAME }}
+        asset_content_type: application/octet-stream
+
+    - name: Cleanup
+      if: always()
+      run: |
+        sudo umount /mnt/image_mount 2>/dev/null || true
+        sudo rm -rf /tmp/image_build
+        sudo rm -rf /mnt/image_mount
+
