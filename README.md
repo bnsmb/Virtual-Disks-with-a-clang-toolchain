@@ -13,7 +13,18 @@ Download the **perl544_and_clang_virtual_image.gz** file from the releases; copy
 
 If not already done, copy the script **create_overlay_mount.sh** to the phone (either from this repository or from the repository with scripts [https://github.com/bnsmb/scripts-for-Android](https://github.com/bnsmb/scripts-for-Android)) and make it executable.
 
-Then open an adb shell and execute as user **root**:
+**Note:**
+
+The **version 1.4.0** or newer of the script **create_overlay_mount.sh** is required for this usage. 
+
+Use the command
+```
+./create_overlay_mount.sh -V
+```
+to print the version of the script
+
+
+To enable the overlay mount, open an adb shell and execute as user **root**:
 ```
 /data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system
 ```
