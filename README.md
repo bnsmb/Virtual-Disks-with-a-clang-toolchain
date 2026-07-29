@@ -194,6 +194,28 @@ Device API Level (runtime): 36
 ASUS_I006D:/ #
 ```
 
+
+To test the **clang assembler** execute this command:
+```
+cd /data/local/tmp/ &&  \
+  clang -nostdlib -static -Wl,--entry=_start -o helloworld_in_assembler  /system/usr/share/as/helloworld_in_assembler_for_as.s  && ./helloworld_in_assembler
+```
+
+**Example:**
+```
+[clang19 vdisk env] ASUS_I006D:/data/local/tmp $ clang -nostdlib -static -Wl,--entry=_start -o helloworld_in_assembler  /system/usr/share/as/helloworld_in_assembler_for_as.s  && ./helloworld_in_assembler
+Hello, World from an assembler program compiled with as and ld from the binutils!
+[clang19 vdisk env] ASUS_I006D:/data/local/tmp $
+```
+
+To test the assembler **as** and the linker **ld** from the **GNU binutils** execute these commands:
+```
+cd /data/local/tmp/ &&  \
+  /system/usr/bin/as -o ./helloworld_in_assembler_for_as.o /system/usr/share/as//helloworld_in_assembler_for_as.s && \
+  /system/usr/bin/ld -o ./helloworld_in_assembler_for_as ./helloworld_in_assembler_for_as.o && \
+  ./helloworld_in_assembler_for_as
+```
+
 Be aware, that **/system** is now writable for the user **root**. However, all new or modified files are stored in the virtual disk image and **NOT** in the real filesystem for **/system**. Therefore, you can add new files to the virtual disk by simply copying the files to **/system**. You can even delete files in **/system** (these files are also not really deleted in the original filesystem for **/system**, of course).
 
 Keep in mind, that the free space on the virtual disk is only about **170 MB**.
