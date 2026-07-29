@@ -15,7 +15,7 @@ If not already done, copy the script **create_overlay_mount.sh** to the phone (e
 
 **Note:**
 
-The **version 1.4.0** or newer of the script **create_overlay_mount.sh** is required for this usage. 
+The **version 1.4.1** or newer of the script **create_overlay_mount.sh** is required for this usage. 
 
 Use the command
 ```
@@ -35,18 +35,18 @@ To enable the overlay mount, open an adb shell and execute as user **root**:
 <summary><b>/data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system</b></summary>
 
  ```
-/ASUS_I006D:/ # /data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system
-The image file "/data/local/tmp/perl544_and_clang_virtual_image" already exists - there should already be a filesystem
-Creating the directory "/dev/ov" ...
+/ASUS_I006D:/data/local/tmp $ time su - -c  /data/local/tmp/create_overlay_mount.sh 'IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image' /system
+The image file "/data/local/tmp/perl544_and_clang_virtual_image" already exists - there should already be a filesystem on the disk
 Mounting the imagefile "/data/local/tmp/perl544_and_clang_virtual_image" to "/dev/ov" ...
+Now correcting the SELinux context for all files and directories in the directory "/dev/ov/upper" with the SELinux context "u:object_r:unlabeled:s0" to "u:object_r:system_file:s0" ...
+This may take some minutes - please be patient 
+... SELinux context for the files successfully modified
 
 Creating and mounting the directories for the overlay mount for "/system" ...
 
 Creating the overlay mount for "/system" ...
 Creating the bind mount "/system"...
 Checking the overlay mount for "/system" ...
-Now correcting the SELinux context for all files and directories in the overlay filesystem with the SELinux context "u:object_r:unlabeled:s0" to "u:object_r:system_file:s0" ...
-... SELinux context for the files successfully modified
 
 Summary:
 --------
@@ -55,12 +55,17 @@ Summary:
 
   /system
 
-ASUS_I006D:/ # 
+    0m03.48s real     0m00.01s user     0m00.01s system
+ASUS_I006D:/data/local/tmp $ 
 ```
 </details>
 
+**Note:**
 
-Now the files from the virtual disk are available for all users in all shells with access to **/system** on the phone:
+When a virtual disk with an overlay file system is used for the first time, the script **create_overlay_mount.sh** corrects the SELinux context of the files and directories on the disk. Depending on the number of files and directories on the disk, this may take some time.
+
+
+Now the files from the virtual disk are available for all users in all shells with access to **/system** on the phone; examples:
 ```
 ASUS_I006D:/ # perl --version
 
@@ -95,7 +100,7 @@ source /bin/init_clang19_env
 **Example:**
 
 <details>
-<summary><b>source /bin/init_clang19_en</b></summary>
+<summary><b>source /bin/init_clang19_env</b></summary>
 
 ```
 ASUS_I006D:/ # source /bin/init_clang19_env
@@ -226,12 +231,15 @@ wget2                          2.2.0-v1.0.0.0
 
 If a non-root user, such as **shell**, can no longer access the files in **/system/bin** after creating the overlay mount, you have most likely used an old version of the **create_overlay_mount.sh** script, and the SELinux context for the files in the overlay filesystem is incorrect.
 
-If you still have a shell open with root access, you can fix this error with the following command:
+If you still have a shell open with root access, you can fix this error with the following commands (in this order!):
 ```
+ find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -type l -print0 |
+    xargs -0 chcon u:object_r:system_file:s0
+
  find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -print0 |
     xargs -0 chcon u:object_r:system_file:s0
 ```
-The **find** command modifies the files on the virtual disk and should therefore only be run once.
+The **find** command modifies the files on the virtual disk and therefore only needs to be run once.
 
 Another work around without modifying the files in the virtual disk image is to temporary disable SELinux by executing as user **root**:
 ```
@@ -265,6 +273,29 @@ The environment for Perl programs is defined in the file **/system/bin/perl_env*
 
 The file system on the virtual disk is **ext4**. To increase the capacity of the virtual disk, use the standard Linux commands on a PC to expand file systems.
 
+
+To correct the SELinux context for the files and directories on the virtual disk without creating an overlay mount execute this command:
+```
+/data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image --relabel mount_only
+```
+**Example:**
+```
+ASUS_I006D:/ $ su - -c /data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image --relabel mount_only
+The image file "/data/local/tmp/perl544_and_clang_virtual_image" already exists - there should already be a filesystem on the disk
+Mounting the imagefile "/data/local/tmp/perl544_and_clang_virtual_image" to "/dev/ov" ...
+Now correcting the SELinux context for all files and directories in the directory "/dev/ov/upper" with the SELinux context "u:object_r:unlabeled:s0" to "u:object_r:system_file:s0" ...
+This may take some minutes - please be patient
+... SELinux context for the files successfully modified
+
+The virtual disk is mounted to "/dev/ov"
+
+ASUS_I006D:/ $
+```
+
+To umount the virtual disk again execute this command.
+```
+su - -c /data/local/tmp/create_overlay_mount.sh clean
+```
 
 The documentation for the script **create_overlay_mount.sh** is [here](https://bnsmb.de/android/Documentation_for_the_script_create_overlay_mount.sh.html).
 
