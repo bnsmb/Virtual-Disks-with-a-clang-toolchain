@@ -902,6 +902,10 @@ function set_selinux_context_for_files {
   if [ -d "${TARGET_DIR}" ] ; then
     NEW_SELINUX_CONTEXT="$( stat -c %C "${TARGET_DIR}" )"
 
+    if [ "${UNLABELED_SELINUX_CONTEXT}"x = "${NEW_SELINUX_CONTEXT}"x ] ; then
+      LogWarning "Something might be wrong here: The new SELinux Context is \"${NEW_SELINUX_CONTEXT}\" "
+    fi 
+    
     LogMsg "Now correcting the SELinux context for all files and directories in the directory \"${TARGET_DIR}\" with the SELinux context \"${UNLABELED_SELINUX_CONTEXT}\" to \"${NEW_SELINUX_CONTEXT}\" ..."
     LogMsg  "This may take some minutes - please be patient "
 
@@ -2960,15 +2964,16 @@ case ${ACTION} in
 # correct the SELinux context for the files and directories in the ./upper dir with unlabeled SELinux context
 #
     if [ ${RELABEL_UNLABELED_FILES} = ${__TRUE} ] ; then
+      create_overlay_directory_tree
+
       set_selinux_context_for_files "${BASEDIR}/upper"
     else
       LogInfo "Relabeling of unlabeled files in the overlay filesystem is disabled"
     fi
 
     if [ "${ACTION}"x != "mount_only"x ] ; then
-      create_overlay_directory_tree
       create_overlay_mounts
-      
+
       print_summary
     else
       LogMsg ""
