@@ -21,7 +21,7 @@ on:
       prerelease:
         description: 'Mark as pre-release?'
         required: true
-        default: 'true'
+        default: 'false'
         type: choice
         options:
           - 'false'
@@ -111,28 +111,29 @@ jobs:
         if [ -d "${{ github.workspace }}/image" ]; then
           echo "Copying files from ./image directory..."
           
-          # Use tar to preserve all permissions and handle deep directory structures
-          cd ${{ github.workspace }}
-          sudo tar -cf - image/ | (cd /mnt/image_mount && sudo tar -xpf -)
-          
-          # Alternative method if tar fails (fallback)
-          if [ $? -ne 0 ]; then
-            echo "Tar method failed, using cp as fallback..."
-            sudo cp -rp ${{ github.workspace }}/image/* /mnt/image_mount/ 2>/dev/null || echo "No files to copy found"
+          # Use rsync if available (more robust), otherwise fallback to cp
+          if command -v rsync &> /dev/null; then
+            echo "Using rsync to copy files..."
+            sudo rsync -av --chown=root:root "${{ github.workspace }}/image/" /mnt/image_mount/
+          else
+            echo "Using cp to copy files..."
+            sudo cp -rp "${{ github.workspace }}/image/." /mnt/image_mount/ 2>/dev/null || echo "No files to copy found"
           fi
           
-          # Create work directory with special permissions
-          echo "Setting up work directories with special permissions..."
-          sudo mkdir -p /mnt/image_mount/work/system/work
-          sudo chmod 777 /mnt/image_mount/work
-          sudo chmod 755 /mnt/image_mount/work/system
-          sudo chmod 0 /mnt/image_mount/work/system/work
-          
-          # Fix file permissions and owner (ensure everything is owned by root)
+          # Ensure all files are owned by root
           echo "Setting file ownership to root..."
           sudo chown -R root:root /mnt/image_mount/
           
-          # Create script to display image version
+          # Create work directory with special permissions (if it doesn't exist)
+          echo "Setting up work directories with special permissions..."
+          sudo mkdir -p /mnt/image_mount/work/system/work
+          sudo chmod 777 /mnt/image_mount/work 2>/dev/null || true
+          sudo chmod 755 /mnt/image_mount/work/system 2>/dev/null || true
+          sudo chmod 0 /mnt/image_mount/work/system/work 2>/dev/null || true
+          
+          # Create script to display image version - ensure parent directories exist
+          echo "Creating version script..."
+          sudo mkdir -p /mnt/image_mount/upper/system/bin
           echo 'echo "# $( date +%s ) # Virtual disk created at $( date )"' | sudo tee /mnt/image_mount/upper/system/bin/print_image_version >/dev/null
           sudo chmod 755 /mnt/image_mount/upper/system/bin/print_image_version
           
