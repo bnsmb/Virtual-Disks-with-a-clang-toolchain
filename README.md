@@ -239,7 +239,7 @@ If you still have a shell open with root access, you can fix this error with the
  find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -print0 |
     xargs -0 chcon u:object_r:system_file:s0
 ```
-The **find** command modifies the files on the virtual disk and should therefore only be run once.
+The **find** command modifies the files on the virtual disk and therefore only needs to be run once.
 
 Another work around without modifying the files in the virtual disk image is to temporary disable SELinux by executing as user **root**:
 ```
