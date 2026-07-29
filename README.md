@@ -218,7 +218,7 @@ cd /data/local/tmp/ &&  \
 
 Be aware, that **/system** is now writable for the user **root**. However, all new or modified files are stored in the virtual disk image and **NOT** in the real filesystem for **/system**. Therefore, you can add new files to the virtual disk by simply copying the files to **/system**. You can even delete files in **/system** (these files are also not really deleted in the original filesystem for **/system**, of course).
 
-Keep in mind, that the free space on the virtual disk is only about **170 MB**.
+Keep in mind, that the free space on the virtual disk is only about **100 MB**.
 Use the command
 ```
 df -h /dev/ov
@@ -256,7 +256,7 @@ If a non-root user, such as **shell**, can no longer access the files in **/syst
 If you still have a shell open with root access, you can fix this error with the following commands (in this order!):
 ```
  find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -type l -print0 |
-    xargs -0 chcon u:object_r:system_file:s0
+    xargs -0 chcon -h u:object_r:system_file:s0
 
  find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -print0 |
     xargs -0 chcon u:object_r:system_file:s0
