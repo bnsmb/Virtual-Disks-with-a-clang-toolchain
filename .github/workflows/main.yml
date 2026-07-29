@@ -161,7 +161,7 @@ jobs:
         tag_name: ${{ env.RELEASE_VERSION }}
         release_name: Release ${{ env.RELEASE_VERSION }}
         draft: false
-        prerelease: false
+        prerelease: true
 
     - name: Upload compressed image to release
       uses: actions/upload-release-asset@v1
