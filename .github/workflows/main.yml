@@ -1,4 +1,4 @@
-name: Create Virtual Image with Ext4 Filesystem
+name: Create Virtual Image with Ext3 Filesystem
 
 on:
   workflow_dispatch:
@@ -18,6 +18,14 @@ on:
         required: true
         default: 'latest'
         type: string
+      prerelease:
+        description: 'Mark as pre-release?'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 permissions:
   contents: write
@@ -45,12 +53,14 @@ jobs:
         FILENAME="${{ github.event.inputs.filename }}"
         SIZE_GB="${{ github.event.inputs.size_gb }}"
         RELEASE_VERSION="${{ github.event.inputs.release_version }}"
+        PRERELEASE="${{ github.event.inputs.prerelease }}"
         
         # Calculate size in MB with 50MB safety margin to stay under 2GB limit
         SIZE_MB=$((SIZE_GB * 1024 - 50))
         
         echo "FILENAME=$FILENAME" >> $GITHUB_ENV
         echo "SIZE_MB=$SIZE_MB" >> $GITHUB_ENV
+        echo "PRERELEASE=$PRERELEASE" >> $GITHUB_ENV
         
         # Determine release version
         if [ "$RELEASE_VERSION" = "latest" ]; then
@@ -80,9 +90,9 @@ jobs:
         echo "Creating image file with size ${{ env.SIZE_MB }} MB..."
         dd if=/dev/zero of=${{ env.FILENAME }} bs=1M count=${{ env.SIZE_MB }} status=progress
         
-        # Create ext4 filesystem
-        echo "Creating ext4 filesystem..."
-        sudo mkfs.ext4 -F ${{ env.FILENAME }}
+        # Create ext3 filesystem
+        echo "Creating ext3 filesystem..."
+        sudo mkfs.ext3 -F ${{ env.FILENAME }}
         
         echo "TEMP_DIR=/tmp/image_build" >> $GITHUB_ENV
 
@@ -100,7 +110,16 @@ jobs:
         # Copy all files from ./image directory
         if [ -d "${{ github.workspace }}/image" ]; then
           echo "Copying files from ./image directory..."
-          sudo cp -rp ${{ github.workspace }}/image/* /mnt/image_mount/ 2>/dev/null || echo "No files to copy found"
+          
+          # Use tar to preserve all permissions and handle deep directory structures
+          cd ${{ github.workspace }}
+          sudo tar -cf - image/ | (cd /mnt/image_mount && sudo tar -xpf -)
+          
+          # Alternative method if tar fails (fallback)
+          if [ $? -ne 0 ]; then
+            echo "Tar method failed, using cp as fallback..."
+            sudo cp -rp ${{ github.workspace }}/image/* /mnt/image_mount/ 2>/dev/null || echo "No files to copy found"
+          fi
           
           # Create work directory with special permissions
           echo "Setting up work directories with special permissions..."
@@ -109,7 +128,7 @@ jobs:
           sudo chmod 755 /mnt/image_mount/work/system
           sudo chmod 0 /mnt/image_mount/work/system/work
           
-          # Fix file permissions and owner
+          # Fix file permissions and owner (ensure everything is owned by root)
           echo "Setting file ownership to root..."
           sudo chown -R root:root /mnt/image_mount/
           
@@ -161,7 +180,7 @@ jobs:
         tag_name: ${{ env.RELEASE_VERSION }}
         release_name: Release ${{ env.RELEASE_VERSION }}
         draft: false
-        prerelease: true
+        prerelease: ${{ env.PRERELEASE == 'true' }}
 
     - name: Upload compressed image to release
       uses: actions/upload-release-asset@v1
