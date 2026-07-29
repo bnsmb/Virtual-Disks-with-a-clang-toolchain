@@ -1,6 +1,6 @@
 # Virtual-Disks-with-a-clang-toolchain
 
-This repository contains the files for a virtual disk with a **clang19 toolchain** for Android on devices with **arm64** CPUs, which can be used as an overlay mount.
+This repository contains the files for a virtual disk with a **clang19 toolchain** for **Android** on devices with **arm64** CPUs, which can be used as an overlay mount.
 
 
 <h2>Usage instructions</h2>
