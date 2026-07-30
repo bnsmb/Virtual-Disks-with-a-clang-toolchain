@@ -290,7 +290,10 @@ as user **root**.
 This command only needs to run once.
 
 
-The environment for Perl programs is defined in the file **/system/bin/perl_env**. The default directory used for Perl Modules is **/system/usr/share/perl/lib/perl5**.
+The environment for **Perl** programs is defined in the file **/system/bin/perl_env**. The default directory used for Perl Modules is **/system/usr/share/perl/lib/perl5**.
+
+
+**Python** uses the directory **/data/local/tmp/home/python** for the compiled Python files.
 
 
 The file system on the virtual disk is **ext4**. To increase the capacity of the virtual disk, use the standard Linux commands on a PC to expand file systems.
