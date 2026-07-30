@@ -1,4 +1,4 @@
-name: Create Virtual Image with Ext4 Filesystem
+name: Create Virtual Image with Ext3 Filesystem
 
 on:
   workflow_dispatch:
@@ -18,6 +18,14 @@ on:
         required: true
         default: 'latest'
         type: string
+      prerelease:
+        description: 'Mark as pre-release?'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
 
 permissions:
   contents: write
@@ -45,12 +53,14 @@ jobs:
         FILENAME="${{ github.event.inputs.filename }}"
         SIZE_GB="${{ github.event.inputs.size_gb }}"
         RELEASE_VERSION="${{ github.event.inputs.release_version }}"
+        PRERELEASE="${{ github.event.inputs.prerelease }}"
         
         # Calculate size in MB with 50MB safety margin to stay under 2GB limit
         SIZE_MB=$((SIZE_GB * 1024 - 50))
         
         echo "FILENAME=$FILENAME" >> $GITHUB_ENV
         echo "SIZE_MB=$SIZE_MB" >> $GITHUB_ENV
+        echo "PRERELEASE=$PRERELEASE" >> $GITHUB_ENV
         
         # Determine release version
         if [ "$RELEASE_VERSION" = "latest" ]; then
@@ -80,9 +90,9 @@ jobs:
         echo "Creating image file with size ${{ env.SIZE_MB }} MB..."
         dd if=/dev/zero of=${{ env.FILENAME }} bs=1M count=${{ env.SIZE_MB }} status=progress
         
-        # Create ext4 filesystem
-        echo "Creating ext4 filesystem..."
-        sudo mkfs.ext4 -F ${{ env.FILENAME }}
+        # Create ext3 filesystem
+        echo "Creating ext3 filesystem..."
+        sudo mkfs.ext3 -F ${{ env.FILENAME }}
         
         echo "TEMP_DIR=/tmp/image_build" >> $GITHUB_ENV
 
@@ -100,20 +110,30 @@ jobs:
         # Copy all files from ./image directory
         if [ -d "${{ github.workspace }}/image" ]; then
           echo "Copying files from ./image directory..."
-          sudo cp -rp ${{ github.workspace }}/image/* /mnt/image_mount/ 2>/dev/null || echo "No files to copy found"
           
-          # Create work directory with special permissions
-          echo "Setting up work directories with special permissions..."
-          sudo mkdir -p /mnt/image_mount/work/system/work
-          sudo chmod 777 /mnt/image_mount/work
-          sudo chmod 755 /mnt/image_mount/work/system
-          sudo chmod 0 /mnt/image_mount/work/system/work
+          # Use rsync if available (more robust), otherwise fallback to cp
+          if command -v rsync &> /dev/null; then
+            echo "Using rsync to copy files..."
+            sudo rsync -av --chown=root:root "${{ github.workspace }}/image/" /mnt/image_mount/
+          else
+            echo "Using cp to copy files..."
+            sudo cp -rp "${{ github.workspace }}/image/." /mnt/image_mount/ 2>/dev/null || echo "No files to copy found"
+          fi
           
-          # Fix file permissions and owner
+          # Ensure all files are owned by root
           echo "Setting file ownership to root..."
           sudo chown -R root:root /mnt/image_mount/
           
-          # Create script to display image version
+          # Create work directory with special permissions (if it doesn't exist)
+          echo "Setting up work directories with special permissions..."
+          sudo mkdir -p /mnt/image_mount/work/system/work
+          sudo chmod 777 /mnt/image_mount/work 2>/dev/null || true
+          sudo chmod 755 /mnt/image_mount/work/system 2>/dev/null || true
+          sudo chmod 0 /mnt/image_mount/work/system/work 2>/dev/null || true
+          
+          # Create script to display image version - ensure parent directories exist
+          echo "Creating version script..."
+          sudo mkdir -p /mnt/image_mount/upper/system/bin
           echo 'echo "# $( date +%s ) # Virtual disk created at $( date )"' | sudo tee /mnt/image_mount/upper/system/bin/print_image_version >/dev/null
           sudo chmod 755 /mnt/image_mount/upper/system/bin/print_image_version
           
@@ -161,7 +181,7 @@ jobs:
         tag_name: ${{ env.RELEASE_VERSION }}
         release_name: Release ${{ env.RELEASE_VERSION }}
         draft: false
-        prerelease: false
+        prerelease: ${{ env.PRERELEASE == 'true' }}
 
     - name: Upload compressed image to release
       uses: actions/upload-release-asset@v1

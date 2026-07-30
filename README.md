@@ -1,6 +1,6 @@
 # Virtual-Disks-with-a-clang-toolchain
 
-This repository contains the files for a virtual disk with a **clang19 toolchain** for Android on devices with **arm64** CPUs, which can be used as an overlay mount.
+This repository contains the files for a virtual disk with a **clang19 toolchain** for **Android** on devices with **arm64** CPUs, which can be used as an overlay mount.
 
 
 <h2>Usage instructions</h2>
@@ -194,9 +194,31 @@ Device API Level (runtime): 36
 ASUS_I006D:/ #
 ```
 
+
+To test the **clang assembler** execute this command:
+```
+cd /data/local/tmp/ &&  \
+  clang -nostdlib -static -Wl,--entry=_start -o helloworld_in_assembler  /system/usr/share/as/helloworld_in_assembler_for_as.s  && ./helloworld_in_assembler
+```
+
+**Example:**
+```
+[clang19 vdisk env] ASUS_I006D:/data/local/tmp $ clang -nostdlib -static -Wl,--entry=_start -o helloworld_in_assembler  /system/usr/share/as/helloworld_in_assembler_for_as.s  && ./helloworld_in_assembler
+Hello, World from an assembler program compiled with as and ld from the binutils!
+[clang19 vdisk env] ASUS_I006D:/data/local/tmp $
+```
+
+To test the assembler **as** and the linker **ld** from the **GNU binutils** execute these commands:
+```
+cd /data/local/tmp/ &&  \
+  /system/usr/bin/as -o ./helloworld_in_assembler_for_as.o /system/usr/share/as//helloworld_in_assembler_for_as.s && \
+  /system/usr/bin/ld -o ./helloworld_in_assembler_for_as ./helloworld_in_assembler_for_as.o && \
+  ./helloworld_in_assembler_for_as
+```
+
 Be aware, that **/system** is now writable for the user **root**. However, all new or modified files are stored in the virtual disk image and **NOT** in the real filesystem for **/system**. Therefore, you can add new files to the virtual disk by simply copying the files to **/system**. You can even delete files in **/system** (these files are also not really deleted in the original filesystem for **/system**, of course).
 
-Keep in mind, that the free space on the virtual disk is only about **170 MB**.
+Keep in mind, that the free space on the virtual disk is only about **100 MB**.
 Use the command
 ```
 df -h /dev/ov
@@ -234,7 +256,7 @@ If a non-root user, such as **shell**, can no longer access the files in **/syst
 If you still have a shell open with root access, you can fix this error with the following commands (in this order!):
 ```
  find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -type l -print0 |
-    xargs -0 chcon u:object_r:system_file:s0
+    xargs -0 chcon -h u:object_r:system_file:s0
 
  find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -print0 |
     xargs -0 chcon u:object_r:system_file:s0
@@ -268,7 +290,10 @@ as user **root**.
 This command only needs to run once.
 
 
-The environment for Perl programs is defined in the file **/system/bin/perl_env**. The default directory used for Perl Modules is **/system/usr/share/perl/lib/perl5**.
+The environment for **Perl** programs is defined in the file **/system/bin/perl_env**. The default directory used for Perl Modules is **/system/usr/share/perl/lib/perl5**.
+
+
+**Python** uses the directory **/data/local/tmp/home/python** for the compiled Python files.
 
 
 The file system on the virtual disk is **ext4**. To increase the capacity of the virtual disk, use the standard Linux commands on a PC to expand file systems.
