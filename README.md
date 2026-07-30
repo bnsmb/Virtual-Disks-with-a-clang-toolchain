@@ -203,9 +203,13 @@ cd /data/local/tmp/ &&  \
 
 **Example:**
 ```
-[clang19 vdisk env] ASUS_I006D:/data/local/tmp $ clang -nostdlib -static -Wl,--entry=_start -o helloworld_in_assembler  /system/usr/share/as/helloworld_in_assembler_for_as.s  && ./helloworld_in_assembler
-Hello, World from an assembler program compiled with as and ld from the binutils!
+[clang19 vdisk env] 1|ASUS_I006D:/ $ cd /data/local/tmp
 [clang19 vdisk env] ASUS_I006D:/data/local/tmp $
+
+[clang19 vdisk env] ASUS_I006D:/data/local/tmp $ clang -nostdlib -static -Wl,--entry=_start -o helloworld_in_assembler   /system/usr/share/as/helloworld_in_assembler_for_as.s  && ./helloworld_in_assembler                                                    
+Hello, World from an assembler program compiled with the assembler freom clang!
+[clang19 vdisk env] ASUS_I006D:/data/local/tmp $ 
+
 ```
 
 To test the assembler **as** and the linker **ld** from the **GNU binutils** execute these commands:
