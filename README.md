@@ -243,7 +243,6 @@ openssl                        3.5.7-v1.1.0
 perl544                        5.44.0-v1.1.1
 python3                        3.14.v2.2.0
 rsync                          3.4.4-v1.3.0
-vim                            9.1.672
 wget2                          2.2.0-v1.0.0.0
 ```
 (see the [documentation for the Magisk modules](https://bnsmb.de/Magisk_Modules.html) for implementation details for the various tools)
