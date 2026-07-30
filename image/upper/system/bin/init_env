@@ -1,0 +1,6 @@
+export PATH=/system/bin:/system/usr/bin:$PATH
+
+[[ "PS1" != "[virtenv]*" ]] && export PS1="[virtenv] $PS1"
+
+[[ $0 == */init_env ]] && /system/usr/bin/bash
+
