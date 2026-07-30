@@ -277,7 +277,7 @@ EOT
       if [ -d "${NDK_DIR}/include" ] ; then
         INCLUDE_DIRS="${INCLUDE_DIRS} ${NDK_DIR}/include"
       else
-        LogWarning "The directory \"${SYSROOT_LIB_DIR}\" does not exist"
+        LogWarning "The directory \"${INCLUDE_DIRS} ${NDK_DIR}/include\" does not exist"
       fi
 
     fi
@@ -290,6 +290,13 @@ EOT
 
       INCLUDE_DIRS="${INCLUDE_DIRS} ${SYSROOT}/usr/include"
 
+      if [ -d "${SYSROOT}/usr/include/aarch64-linux-android" ] ; then
+        INCLUDE_DIRS="${INCLUDE_DIRS} ${SYSROOT}/usr/include/aarch64-linux-android"
+      else
+        LogWarning "The directory \"${SYSROOT}/usr/include/aarch64-linux-android\" does not exist"
+      fi
+
+      
       if [ -d ${SYSROOT_LIB_DIR}/${API} ] ; then
         LIB_DIRS="${LIB_DIRS} ${SYSROOT_LIB_DIR}/${API}"
         OBJ_DIRS="${OBJ_DIRS} ${SYSROOT_LIB_DIR}/${API}"
