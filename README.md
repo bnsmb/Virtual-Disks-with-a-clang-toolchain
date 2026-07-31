@@ -100,7 +100,7 @@ source /bin/init_clang19_env
 **Example:**
 
 <details>
-<summary><b>source /bin/init_clang19_env</b></summary>
+<summary><b>source /bin/init_19_env</b></summary>
 
 ```
 ASUS_I006D:/ # source /bin/init_clang19_env
@@ -328,7 +328,7 @@ su - -c /data/local/tmp/create_overlay_mount.sh clean
 The documentation for the script **create_overlay_mount.sh** is [here](https://bnsmb.de/android/Documentation_for_the_script_create_overlay_mount.sh.html).
 
 
-On phones without root access, you can use the [clang19 toolchain](https://bnsmb.de/Compiling_programs_for_Android.html#How_to_install_a_Toolchain_for_clang_on_phones_without_root_access) to install clang and the other tools necessary to compile C or C++ source files on the phone.
+On phones without root access, you can use the [clang19 toolchain](https://bnsmb.de/Compiling_programs_for_Android.html#How_to_install_a_Toolchain_for_clang_on_phones_without_root_access) to install **clang** and the other tools necessary to compile C or C++ source files on the phone.
 
 <hr></hr>
 
@@ -338,7 +338,7 @@ On phones without root access, you can use the [clang19 toolchain](https://bnsmb
 To build your own virtual disk image, create a fork of this repository in GitHub and modify or add the files in that repository. When done, create a virtual disk image with the files in your repository using the Action "**Create Virtual Image with Ext4 Filesystem**" in the GitHub WebGUI. This action creates a new release with a virtual disk image with the current contents of the GitHub repository.
 
 
-Or, if you you want to create the virtual disk local on your PC running Linux, execute these steps:
+Or, if you want to create the virtual disk local on your PC running Linux, execute these steps:
 
 Clone the repository 
 ```
