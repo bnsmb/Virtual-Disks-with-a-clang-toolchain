@@ -239,7 +239,6 @@ clang19                        19.0.0git-v1.2.3
 cmake                          4.3.0-v1.0.0  
 curl                           8.17.0-v1.0.0.0
 DebugTools                     9.3.4.10
-gdb17                          17.1_v1.0.0
 git                            2.53.1-v1.1.0
 man                            2.13-v1.0.0
 myscripts                      1.4.19.0
@@ -251,6 +250,29 @@ wget2                          2.2.0-v1.0.0.0
 ```
 (see the [documentation for the Magisk modules](https://bnsmb.de/Magisk_Modules.html) for implementation details for the various tools)
 
+**gdb 17.2** is also in the virtual disk image.
+
+Some libraries are also in the virtual disk image:
+
+<details><summary><b>ls image/upper/system/usr/lib</b></summary>
+
+ ```
+[xtrnaw7@t15g /data/develop/git_repos/Virtual-Disks-with-a-clang-toolchain]$ ls image/upper/system/usr/lib
+bash             libcrypt.a         libctf-nobfd.la   libfl.so.2           libgdbm.so.3       libmenu.so.6        libncursesw.so.6.6  libpkgconf.la         libsim.a             libwget.la        python3.14
+bfd-plugins      libcrypto.a        libcurl.a         libfl.so.2.0.0       libgdbm.so.3.0.0   libmenuw.a          libopcodes.a        libpkgconf.so         libsqlite3.so        libwget.so
+charset.alias    libcrypto.so       libcurl.la        libform.so           libgdbm.so.6       libmenuw.so         libopcodes.la       libpython3.14.a       libsqlite3.so.0      liby.a
+cmake            libcrypto.so.3     libcurl.so        libform.so.6         libgdbm.so.6.0.0   libmenuw.so.6       libpanel.so         libpython3.14.so      libsqlite3.so.0.8.6  libz.so
+groff            libcrypto.so.4     libcurl.so.4      libformw.a           libiconv.so        libmenuw.so.6.6     libpanel.so.6       libpython3.14.so.1.0  libssl.a             libz.so.1
+libbfd.a         libcrypt.so        libcurl.so.4.8.0  libformw.so          libiconv.so.2.6.1  libncurses.so       libpanelw.a         libpython3.so         libssl.so            libzstd.so
+libbfd.la        libcrypt.so.1      libexpat.so       libformw.so.6        libinproctrace.so  libncurses.so.6     libpanelw.so        libreadline.so        libssl.so.3          libzstd.so.1
+libbz2.so        libcrypt.so.1.1.0  libffi.so         libformw.so.6.6      liblzma.so         libncursesw.a       libpanelw.so.6      libreadline.so.8      libssl.so.4          libzstd.so.1.5.6
+libbz2.so.1      libctf.a           libfl.a           libgdbm_compat.so    liblzma.so.5       libncursesw.so      libpanelw.so.6.3    libreadline.so.8.2    libuuid.so           ossl-modules
+libbz2.so.1.0    libctf.la          libfl.la          libgdbm_compat.so.3  liblzma.so.5.0.4   libncursesw.so.6    libpanelw.so.6.6    libsframe.a           libuuid.so.1         perl5
+libbz2.so.1.0.8  libctf-nobfd.a     libfl.so          libgdbm.so           libmenu.so         libncursesw.so.6.3  libpkgconf.a        libsframe.la          libwget.a            pkgconfig
+[xtrnaw7@t15g /data/develop/git_repos/Virtual-Disks-with-a-clang-toolchain]$
+ ```
+</details>
+<br>
 
 **Trouble Shooting**
 
@@ -355,7 +377,4 @@ add or modify the files in your local repository if necessary, and create the vi
 The script creates the virtual disk in /tmp: **/tmp/perl544_and_clang_virtual_image**
 
 You should only modify or add files in the directory **./image/upper/system** in the repository, this is the overlay for **/system** on the phone. Do **NOT** add files to the other directories in the repository.
-To "delete" a file, create a character device with major=0 and minor=0 for that file in the directory **./upper/system**. E.g. to delete the file **/etc/hosts**:
-```
-mknod  ./dev/ov/upper/system/etc/hosts c 0 0                                                                                                                                              
-```
+
