@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE_SIZE="${IMAGE_SIZE:=2g}"
+IMAGE_SIZE="${IMAGE_SIZE:=3g}"
 IMAGE_FILE="${IMAGE_FILE:=/tmp/perl544_and_clang_virtual_image}"
 MOUNT_POINT="${MOUNT_POINT:=/tmp/mount_point.$$}"
 
