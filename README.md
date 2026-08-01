@@ -11,11 +11,16 @@ To use one of the released images in this repository, execute these steps:
 
 Download the **perl544_and_clang_virtual_image.gz** file from the releases; copy it to the phone to **/data/local/tmp** (or another writable directory), and uncompress the file.
 
+**Note:**
+
+The size of the compressed virtual disk image file is about **600 MB** (the size of the uncompressed file is **3 GB**).
+
+
 If not already done, copy the script **create_overlay_mount.sh** to the phone (either from this repository or from the repository with scripts [https://github.com/bnsmb/scripts-for-Android](https://github.com/bnsmb/scripts-for-Android)) and make it executable.
 
 **Note:**
 
-The **version 1.4.1** or newer of the script **create_overlay_mount.sh** is required for this usage. 
+The **version 1.5.0** or newer of the script **create_overlay_mount.sh** is required for this usage. 
 
 Use the command
 ```
@@ -35,15 +40,17 @@ To enable the overlay mount, open an adb shell and execute as user **root**:
 <summary><b>/data/local/tmp/create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image /system</b></summary>
 
  ```
-/ASUS_I006D:/data/local/tmp $ time su - -c  /data/local/tmp/create_overlay_mount.sh 'IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image' /system
-The image file "/data/local/tmp/perl544_and_clang_virtual_image" already exists - there should already be a filesystem on the disk
-Mounting the imagefile "/data/local/tmp/perl544_and_clang_virtual_image" to "/dev/ov" ...
-Now correcting the SELinux context for all files and directories in the directory "/dev/ov/upper" with the SELinux context "u:object_r:unlabeled:s0" to "u:object_r:system_file:s0" ...
-This may take some minutes - please be patient 
+ASUS_I006D:/data/local/tmp $ su - -c ./create_overlay_mount.sh IMAGE_FILE=perl544_and_clang_virtual_image /system
+The image file "perl544_and_clang_virtual_image" already exists - there should already be a filesystem on the disk
+Mounting the imagefile "perl544_and_clang_virtual_image" to "/dev/ov" ...
+File "/system/relabel" found - will relabel this directory
+Now correcting the SELinux context for all files and directories with the SELinux context "*:unlabeled*:*" or "*:default*:*" in the directory "/dev/ov/upper/system" to "u:object_r:system_file:s0" ...
+This may take some minutes - please be patient
 ... SELinux context for the files successfully modified
 
 Creating and mounting the directories for the overlay mount for "/system" ...
 
+Creating the directory "/dev/ov/merged/system" ...
 Creating the overlay mount for "/system" ...
 Creating the bind mount "/system"...
 Checking the overlay mount for "/system" ...
@@ -55,15 +62,18 @@ Summary:
 
   /system
 
-    0m03.48s real     0m00.01s user     0m00.01s system
 ASUS_I006D:/data/local/tmp $ 
 ```
 </details>
 
 **Note:**
 
-When a virtual disk with an overlay file system is used for the first time, the script **create_overlay_mount.sh** corrects the SELinux context of the files and directories on the disk. Depending on the number of files and directories on the disk, this may take some time.
+The file **/system/relabel** exists in this overlay filesystem. Therefore, the script **create_overlay_mount.sh** corrects the SELinux context for all files and directories in the overlay filesystem with an invalid SELinux context.
 
+Depending on the number of files and directories on the disk, this may take some time. To disable this check for the further reboots, you can delete the file **/system/relabel**. To enable the check again for the next mount of the virtual disk, simply recreate the file:
+```
+touch /system/relabel
+```
 
 Now the files from the virtual disk are available for all users in all shells with access to **/system** on the phone; examples:
 ```
@@ -222,7 +232,7 @@ cd /data/local/tmp/ &&  \
 
 Be aware, that **/system** is now writable for the user **root**. However, all new or modified files are stored in the virtual disk image and **NOT** in the real filesystem for **/system**. Therefore, you can add new files to the virtual disk by simply copying the files to **/system**. You can even delete files in **/system** (these files are also not really deleted in the original filesystem for **/system**, of course).
 
-Keep in mind, that the free space on the virtual disk is only about **100 MB**.
+Keep in mind, that the free space on the virtual disk is only about **1 GB**.
 Use the command
 ```
 df -h /dev/ov
@@ -252,41 +262,187 @@ wget2                          2.2.0-v1.0.0.0
 
 **gdb 17.2** is also in the virtual disk image.
 
-Some libraries are also in the virtual disk image:
+Some libraries and include files are also in the virtual disk image:
 
 <details><summary><b>ls image/upper/system/usr/lib</b></summary>
 
  ```
-[xtrnaw7@t15g /data/develop/git_repos/Virtual-Disks-with-a-clang-toolchain]$ ls image/upper/system/usr/lib
-bash             libcrypt.a         libctf-nobfd.la   libfl.so.2           libgdbm.so.3       libmenu.so.6        libncursesw.so.6.6  libpkgconf.la         libsim.a             libwget.la        python3.14
-bfd-plugins      libcrypto.a        libcurl.a         libfl.so.2.0.0       libgdbm.so.3.0.0   libmenuw.a          libopcodes.a        libpkgconf.so         libsqlite3.so        libwget.so
-charset.alias    libcrypto.so       libcurl.la        libform.so           libgdbm.so.6       libmenuw.so         libopcodes.la       libpython3.14.a       libsqlite3.so.0      liby.a
-cmake            libcrypto.so.3     libcurl.so        libform.so.6         libgdbm.so.6.0.0   libmenuw.so.6       libpanel.so         libpython3.14.so      libsqlite3.so.0.8.6  libz.so
-groff            libcrypto.so.4     libcurl.so.4      libformw.a           libiconv.so        libmenuw.so.6.6     libpanel.so.6       libpython3.14.so.1.0  libssl.a             libz.so.1
-libbfd.a         libcrypt.so        libcurl.so.4.8.0  libformw.so          libiconv.so.2.6.1  libncurses.so       libpanelw.a         libpython3.so         libssl.so            libzstd.so
-libbfd.la        libcrypt.so.1      libexpat.so       libformw.so.6        libinproctrace.so  libncurses.so.6     libpanelw.so        libreadline.so        libssl.so.3          libzstd.so.1
-libbz2.so        libcrypt.so.1.1.0  libffi.so         libformw.so.6.6      liblzma.so         libncursesw.a       libpanelw.so.6      libreadline.so.8      libssl.so.4          libzstd.so.1.5.6
-libbz2.so.1      libctf.a           libfl.a           libgdbm_compat.so    liblzma.so.5       libncursesw.so      libpanelw.so.6.3    libreadline.so.8.2    libuuid.so           ossl-modules
-libbz2.so.1.0    libctf.la          libfl.la          libgdbm_compat.so.3  liblzma.so.5.0.4   libncursesw.so.6    libpanelw.so.6.6    libsframe.a           libuuid.so.1         perl5
-libbz2.so.1.0.8  libctf-nobfd.a     libfl.so          libgdbm.so           libmenu.so         libncursesw.so.6.3  libpkgconf.a        libsframe.la          libwget.a            pkgconfig
-[xtrnaw7@t15g /data/develop/git_repos/Virtual-Disks-with-a-clang-toolchain]$
+ASUS_I006D:/ $ ls -l /system/usr/lib
+total 147844
+drwxr-xr-x  2 root root     4096 2026-07-31 19:58 bash
+drwxr-xr-x  2 root root     4096 2026-07-31 19:58 bfd-plugins
+-rw-r--r--  1 root root        0 2026-07-31 19:58 charset.alias
+drwxr-xr-x  3 root root     4096 2026-07-31 19:58 cmake
+-rw-r--r--  1 root root  1997186 2026-07-31 19:58 libbfd.a
+-rw-r--r--  1 root root     1016 2026-07-31 19:58 libbfd.la
+lrwxrwxrwx  1 root root       17 2026-07-31 19:58 libbz2.so -> ./libbz2.so.1.0.8
+lrwxrwxrwx  1 root root       17 2026-07-31 19:58 libbz2.so.1 -> ./libbz2.so.1.0.8
+lrwxrwxrwx  1 root root       17 2026-07-31 19:58 libbz2.so.1.0 -> ./libbz2.so.1.0.8
+-rw-r--r--  1 root root   198912 2026-07-31 19:58 libbz2.so.1.0.8
+-rw-r--r--  1 root root   421070 2026-07-31 19:58 libcrypt.a
+lrwxrwxrwx  1 root root       19 2026-07-31 19:58 libcrypt.so -> ./libcrypt.so.1.1.0
+lrwxrwxrwx  1 root root       19 2026-07-31 19:58 libcrypt.so.1 -> ./libcrypt.so.1.1.0
+-rw-r--r--  1 root root   339232 2026-07-31 19:58 libcrypt.so.1.1.0
+-rw-r--r--  1 root root 12817680 2026-07-31 19:58 libcrypto.a
+lrwxrwxrwx  1 root root       14 2026-07-31 19:58 libcrypto.so -> libcrypto.so.4
+-rw-r--r--  1 root root  6846664 2026-07-31 19:58 libcrypto.so.3
+-rwxr-xr-x  1 root root  8037768 2026-07-31 19:58 libcrypto.so.4
+-rw-r--r--  1 root root   303026 2026-07-31 19:58 libctf-nobfd.a
+-rw-r--r--  1 root root     1072 2026-07-31 19:58 libctf-nobfd.la
+-rw-r--r--  1 root root   311456 2026-07-31 19:58 libctf.a
+-rw-r--r--  1 root root     1120 2026-07-31 19:58 libctf.la
+-rw-r--r--  1 root root  1803386 2026-07-31 19:58 libcurl.a
+-rw-r--r--  1 root root     1312 2026-07-31 19:58 libcurl.la
+lrwxrwxrwx  1 root root       16 2026-07-31 19:58 libcurl.so -> libcurl.so.4.8.0
+lrwxrwxrwx  1 root root       16 2026-07-31 19:58 libcurl.so.4 -> libcurl.so.4.8.0
+-rw-r--r--  1 root root   975912 2026-07-31 19:58 libcurl.so.4.8.0
+-rw-r--r--  1 root root   174528 2026-07-31 19:58 libexpat.so
+-rw-r--r--  1 root root    93312 2026-07-31 19:58 libffi.so
+-rw-r--r--  1 root root     2924 2026-07-31 19:58 libfl.a
+-rw-r--r--  1 root root      996 2026-07-31 19:58 libfl.la
+lrwxrwxrwx  1 root root       14 2026-07-31 19:58 libfl.so -> libfl.so.2.0.0
+lrwxrwxrwx  1 root root       14 2026-07-31 19:58 libfl.so.2 -> libfl.so.2.0.0
+-rw-r--r--  1 root root     7264 2026-07-31 19:58 libfl.so.2.0.0
+lrwxrwxrwx  1 root root       11 2026-07-31 19:58 libform.so -> libformw.so
+lrwxrwxrwx  1 root root       13 2026-07-31 19:58 libform.so.6 -> libformw.so.6
+-rw-r--r--  1 root root   173316 2026-07-31 19:58 libformw.a
+lrwxrwxrwx  1 root root       13 2026-07-31 19:58 libformw.so -> libformw.so.6
+lrwxrwxrwx  1 root root       15 2026-07-31 19:58 libformw.so.6 -> libformw.so.6.6
+-rwxr-xr-x  1 root root   122576 2026-07-31 19:58 libformw.so.6.6
+lrwxrwxrwx  1 root root       18 2026-07-31 19:58 libgdbm.so -> ./libgdbm.so.3.0.0
+lrwxrwxrwx  1 root root       18 2026-07-31 19:58 libgdbm.so.3 -> ./libgdbm.so.3.0.0
+-rw-r--r--  1 root root    35616 2026-07-31 19:58 libgdbm.so.3.0.0
+lrwxrwxrwx  1 root root       18 2026-07-31 19:58 libgdbm.so.6 -> ./libgdbm.so.6.0.0
+-rw-r--r--  1 root root    81960 2026-07-31 19:58 libgdbm.so.6.0.0
+lrwxrwxrwx  1 root root       21 2026-07-31 19:58 libgdbm_compat.so -> ./libgdbm_compat.so.3
+-rw-r--r--  1 root root    12600 2026-07-31 19:58 libgdbm_compat.so.3
+lrwxrwxrwx  1 root root       17 2026-07-31 19:58 libiconv.so -> libiconv.so.2.6.1
+-rw-r--r--  1 root root  1053856 2026-07-31 19:58 libiconv.so.2.6.1
+-rw-r--r--  1 root root   125296 2026-07-31 19:58 libinproctrace.so
+lrwxrwxrwx  1 root root       18 2026-07-31 19:58 liblzma.so -> ./liblzma.so.5.0.4
+lrwxrwxrwx  1 root root       18 2026-07-31 19:58 liblzma.so.5 -> ./liblzma.so.5.0.4
+-rw-r--r--  1 root root   157296 2026-07-31 19:58 liblzma.so.5.0.4
+lrwxrwxrwx  1 root root       11 2026-07-31 19:58 libmenu.so -> libmenuw.so
+lrwxrwxrwx  1 root root       13 2026-07-31 19:58 libmenu.so.6 -> libmenuw.so.6
+-rw-r--r--  1 root root    80406 2026-07-31 19:58 libmenuw.a
+lrwxrwxrwx  1 root root       13 2026-07-31 19:58 libmenuw.so -> libmenuw.so.6
+lrwxrwxrwx  1 root root       15 2026-07-31 19:58 libmenuw.so.6 -> libmenuw.so.6.6
+-rwxr-xr-x  1 root root    53088 2026-07-31 19:58 libmenuw.so.6.6
+lrwxrwxrwx  1 root root       14 2026-07-31 19:58 libncurses.so -> libncursesw.so
+lrwxrwxrwx  1 root root       16 2026-07-31 19:58 libncurses.so.6 -> libncursesw.so.6
+-rw-r--r--  1 root root  1032906 2026-07-31 19:58 libncursesw.a
+lrwxrwxrwx  1 root root       16 2026-07-31 19:58 libncursesw.so -> libncursesw.so.6
+lrwxrwxrwx  1 root root       18 2026-07-31 19:58 libncursesw.so.6 -> libncursesw.so.6.6
+-rw-r--r--  1 root root   658032 2026-07-31 19:58 libncursesw.so.6.3
+-rwxr-xr-x  1 root root   672784 2026-07-31 19:58 libncursesw.so.6.6
+-rw-r--r--  1 root root  1605296 2026-07-31 19:58 libopcodes.a
+-rw-r--r--  1 root root      934 2026-07-31 19:58 libopcodes.la
+lrwxrwxrwx  1 root root       12 2026-07-31 19:58 libpanel.so -> libpanelw.so
+lrwxrwxrwx  1 root root       14 2026-07-31 19:58 libpanel.so.6 -> libpanelw.so.6
+-rw-r--r--  1 root root    40226 2026-07-31 19:58 libpanelw.a
+lrwxrwxrwx  1 root root       14 2026-07-31 19:58 libpanelw.so -> libpanelw.so.6
+lrwxrwxrwx  1 root root       16 2026-07-31 19:58 libpanelw.so.6 -> libpanelw.so.6.6
+-rw-r--r--  1 root root    30112 2026-07-31 19:58 libpanelw.so.6.3
+-rwxr-xr-x  1 root root    29856 2026-07-31 19:58 libpanelw.so.6.6
+-rw-r--r--  1 root root   128440 2026-07-31 19:58 libpkgconf.a
+-rw-r--r--  1 root root      940 2026-07-31 19:58 libpkgconf.la
+-rw-r--r--  1 root root    85424 2026-07-31 19:58 libpkgconf.so
+-rw-r--r--  1 root root 62066420 2026-07-31 19:58 libpython3.14.a
+lrwxrwxrwx  1 root root       22 2026-07-31 19:58 libpython3.14.so -> ./libpython3.14.so.1.0
+-rw-r--r--  1 root root 37057792 2026-07-31 19:58 libpython3.14.so.1.0
+-rw-r--r--  1 root root     5224 2026-07-31 19:58 libpython3.so
+lrwxrwxrwx  1 root root       20 2026-07-31 19:58 libreadline.so -> ./libreadline.so.8.2
+lrwxrwxrwx  1 root root       20 2026-07-31 19:58 libreadline.so.8 -> ./libreadline.so.8.2
+-rw-r--r--  1 root root   340656 2026-07-31 19:58 libreadline.so.8.2
+-rw-r--r--  1 root root    31420 2026-07-31 19:58 libsframe.a
+-rw-r--r--  1 root root      931 2026-07-31 19:58 libsframe.la
+-rw-r--r--  1 root root   832640 2026-07-31 19:58 libsim.a
+lrwxrwxrwx  1 root root       21 2026-07-31 19:58 libsqlite3.so -> ./libsqlite3.so.0.8.6
+lrwxrwxrwx  1 root root       21 2026-07-31 19:58 libsqlite3.so.0 -> ./libsqlite3.so.0.8.6
+-rw-r--r--  1 root root  1795632 2026-07-31 19:58 libsqlite3.so.0.8.6
+-rw-r--r--  1 root root  2664374 2026-07-31 19:58 libssl.a
+lrwxrwxrwx  1 root root       11 2026-07-31 19:58 libssl.so -> libssl.so.4
+-rw-r--r--  1 root root   914016 2026-07-31 19:58 libssl.so.3
+-rwxr-xr-x  1 root root  1748016 2026-07-31 19:58 libssl.so.4
+lrwxrwxrwx  1 root root       14 2026-07-31 19:58 libuuid.so -> ./libuuid.so.1
+-rw-r--r--  1 root root    37016 2026-07-31 19:58 libuuid.so.1
+-rw-r--r--  1 root root  1326182 2026-07-31 19:58 libwget.a
+-rw-r--r--  1 root root     1338 2026-07-31 19:58 libwget.la
+-rw-r--r--  1 root root   856608 2026-07-31 19:58 libwget.so
+-rw-r--r--  1 root root     3062 2026-07-31 19:58 liby.a
+lrwxrwxrwx  1 root root       11 2026-07-31 19:58 libz.so -> ./libz.so.1
+-rw-r--r--  1 root root    96808 2026-07-31 19:58 libz.so.1
+lrwxrwxrwx  1 root root       18 2026-07-31 19:58 libzstd.so -> ./libzstd.so.1.5.6
+lrwxrwxrwx  1 root root       18 2026-07-31 19:58 libzstd.so.1 -> ./libzstd.so.1.5.6
+-rw-r--r--  1 root root   649688 2026-07-31 19:58 libzstd.so.1.5.6
+drwxr-xr-x  2 root root     4096 2026-07-31 19:58 ossl-modules
+drwxr-xr-x  3 root root     4096 2026-07-31 19:58 perl5
+drwxr-xr-x  2 root root     4096 2026-07-31 19:58 pkgconfig
+drwxr-xr-x 42 root root     4096 2026-07-31 19:58 python3.14
+ASUS_I006D:/ $
+
  ```
 </details>
 <br>
+
+<details><summary><b>ls image/upper/system/usr/lib</b></summary>
+
+```
+ASUS_I006D:/ $ ls -l /system/usr/include
+total 976
+-rw-r--r-- 1 root root   6893 2026-07-31 19:58 FlexLexer.h
+drwxr-xr-x 2 root root   4096 2026-07-31 19:58 android
+-rw-r--r-- 1 root root  11777 2026-07-31 19:58 ansidecl.h
+-rw-r--r-- 1 root root 259239 2026-07-31 19:58 bfd.h
+-rw-r--r-- 1 root root  40639 2026-07-31 19:58 bfdlink.h
+-rw-r--r-- 1 root root  46544 2026-07-31 19:58 ctf-api.h
+-rw-r--r-- 1 root root  26140 2026-07-31 19:58 ctf.h
+drwxr-xr-x 2 root root   4096 2026-07-31 19:58 curl
+-rw-r--r-- 1 root root 105113 2026-07-31 19:58 curses.h
+-rw-r--r-- 1 root root 105201 2026-07-31 19:58 curses.h.org
+-rw-r--r-- 1 root root   4978 2026-07-31 19:58 diagnostics.h
+-rw-r--r-- 1 root root  21041 2026-07-31 19:58 dis-asm.h
+-rw-r--r-- 1 root root   2969 2026-07-31 19:58 eti.h
+-rw-r--r-- 1 root root  18899 2026-07-31 19:58 form.h
+drwxr-xr-x 2 root root   4096 2026-07-31 19:58 gdb
+drwxr-xr-x 2 root root   4096 2026-07-31 19:58 gdbm
+-rw-r--r-- 1 root root  12328 2026-07-31 19:58 gdbm.h
+drwxr-xr-x 2 root root   4096 2026-07-31 19:58 libltdl
+-rw-r--r-- 1 root root   5534 2026-07-31 19:58 ltdl.h
+-rw-r--r-- 1 root root  11875 2026-07-31 19:58 menu.h
+lrwxrwxrwx 1 root root      8 2026-07-31 19:58 ncurses.h -> curses.h
+-rw-r--r-- 1 root root   4183 2026-07-31 19:58 ncurses_dll.h
+drwxr-xr-x 2 root root   4096 2026-07-31 19:58 openssl
+-rw-r--r-- 1 root root   4512 2026-07-31 19:58 panel.h
+drwxr-xr-x 3 root root   4096 2026-07-31 19:58 pkgconf
+-rw-r--r-- 1 root root  18865 2026-07-31 19:58 plugin-api.h
+drwxr-xr-x 4 root root   4096 2026-07-31 19:58 python3.14
+-rw-r--r-- 1 root root  10989 2026-07-31 19:58 sframe-api.h
+-rw-r--r-- 1 root root  16924 2026-07-31 19:58 sframe.h
+drwxr-xr-x 2 root root   4096 2026-07-31 19:58 sim
+-rw-r--r-- 1 root root   2191 2026-07-31 19:58 symcat.h
+-rw-r--r-- 1 root root  42204 2026-07-31 19:58 term.h
+-rw-r--r-- 1 root root   8685 2026-07-31 19:58 term_entry.h
+-rw-r--r-- 1 root root   3468 2026-07-31 19:58 termcap.h
+-rw-r--r-- 1 root root   3214 2026-07-31 19:58 unctrl.h
+-rw-r--r-- 1 root root  91722 2026-07-31 19:58 wget.h
+-rw-r--r-- 1 root root   1039 2026-07-31 19:58 wgetver.h
+ASUS_I006D:/ $ 
+```
+</details>
+<br>
+
 
 **Trouble Shooting**
 
 If a non-root user, such as **shell**, can no longer access the files in **/system/bin** after creating the overlay mount, you have most likely used an old version of the **create_overlay_mount.sh** script, and the SELinux context for the files in the overlay filesystem is incorrect.
 
-If you still have a shell open with root access, you can fix this error with the following commands (in this order!):
+If you still have a shell open with root access, execute this command as user root:
 ```
- find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -type l -print0 |
-    xargs -0 chcon -h u:object_r:system_file:s0
+/system/bin/correct_selinux_contexts.sh
+```
+This script corrects the SELinux context for the files with invalid SELinux context in the directory **/system**.
 
- find /dev/ov/upper -context ‘u:object_r:unlabeled:s0’ -print0 |
-    xargs -0 chcon u:object_r:system_file:s0
-```
-The **find** command modifies the files on the virtual disk and therefore only needs to be run once.
 
 Another work around without modifying the files in the virtual disk image is to temporary disable SELinux by executing as user **root**:
 ```
