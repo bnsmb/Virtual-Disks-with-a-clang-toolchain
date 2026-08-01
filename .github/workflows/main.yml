@@ -11,7 +11,7 @@ on:
       size_gb:
         description: 'Size of the image file in GB'
         required: true
-        default: 2
+        default: 3
         type: number
       release_version:
         description: 'Version for the release (use "latest" for auto-increment)'
