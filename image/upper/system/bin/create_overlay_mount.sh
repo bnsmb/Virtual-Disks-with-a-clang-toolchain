@@ -4,8 +4,8 @@
 #h# create_overlay_mount.sh <VERSION> - create one or more overlay mounts on a device running a rooted Android OS
 #h#
 #h# Usage:  create_overlay_mount.sh [-h|--help] [--version] [--verbose|-v] [--noselinux] [--selinux] [--no_relabel|--relabel] [--initdisk|--format] [--details] 
-#h#                                 [--short] [--active] [--nomagisk] [var=value] [--run=script[,..,script#]]
-#h#                                 [help] [vars] [list] [test] [get] [undo] [diff] [get] [restore] [clean] [mount_only] [mount] [umount] [remount] [directory0] [... directory#] [default]
+#h#                                 [--short] [--active] [--nomagisk] [var=value] [--run=script[,..,script#]] [help] [vars] [list] [test] [get] 
+#h#                                 [undo] [diff] [get] [restore] [clean] [mount_only] [mount] [mount_existing] [umount] [remount] [directory0] [... directory#] [default]
 #h#
 #H# The parameter that neither start with a "-" or "/" nor contain a "=" are the action parameter that determine what is to be done. 
 #H# Only one action parameter for a run is allowed. 
@@ -18,7 +18,7 @@
 #H# The default directory list for the actions "mount", "diff", "get" and "undo" is the list of directories in the environment variable DIRS_TO_OVERLAY.
 #H# The default directory list for the actions "test", "umount", and "remount" is the list of directories currently mounted to an overlay filesystem.
 #H#
-#H# There are no default values for the action "restore"; the actions "mount_only" and "list" ignore directory parameter.
+#H# There are no default values for the action "restore"; the actions "mount_only", "mount_existing", and "list" ignore directory parameter.
 #H#
 #H# The actions "vars" and "help" only print help messages.
 #H#
@@ -34,7 +34,7 @@
 #H# --verbose    print more messages
 #H# --noselinux  disable SELinux at start of the script (SELinux is NOT enabled again by the script)
 #H# --selinux    enable SELinux at start of the script (SELinux is NOT disabled again by the script)
-#H# --no_relabel do not modify the SELinux context for files with unlabeled SELinux context in the overlay filesystem
+#H# --no_relabel do not modify the SELinux context for files with unlabeled or default SELinux context in the overlay filesystem
 #H# --relabel    modify the SELinux context for files with unlabeled or default SELinux context in the overlay filesystems
 #H#              The default is not to relabel. 
 #H# --initdisk   format the virtual disk before creating the overlay mounts; this will undo all previous changes in the filesystems
@@ -69,12 +69,13 @@
 #H# mount_only   mount the virtual disk and exit
 #H#
 #H# mount        mount the overlays for the directories
+#H# mount_existing mount only the existing overlay filesystems on the virtual disk
 #H# umount       umount the overlays for the directories; default is to umount all overlays
 #H# remount      remount the overlay mounts
 #H#
 #H# clean        umount all overlay mounts and umount the virtual disk
 #H#
-#H# The script does NOT relabel files if the parameter "mount_only" is used. 
+#H# The script does not relabel files if the parameter "mount_only" is used (even if there are relabel files in the overlay filesystems).
 #H# To force relabeling the files when "mount_only" is used, add the option "--relabel"
 #H#
 #H# Other supported parameter:
@@ -95,7 +96,7 @@
 #H# - fully qualified names are searched in "/",  e.g /system_ext/bin/rsync -> /system_ext/bin/rsync
 #H# 
 #H#
-#H# For virtual disks created in Android, the following information can be ignored.
+#H# Note: For virtual disks created in Android, the following information can be ignored.
 #H#
 #H# --------------------------------------------------------------------
 #H#
@@ -113,12 +114,12 @@
 #H#
 #H# If the SELinux context of the files is to be corrected only for certain overlay file systems, the file “relabel” can be created in 
 #H# those directories. In this case, the “--relabel” parameter must not be specified.
-#H# 
+#H# For the overlay filesystem for /system, this is, for example, the file ./upper/system/relabel. I
+#H#
 #H# To relabel the files in the overlay filesystem with other SELinux contexts, create a script to change the SELinux context and
 #H# run it as post install script using the parameter "--run=script". The script can also be located on the overlay filesystem.
 #H# Do not use the parameter "--relabel" in this case.
 #H# 
-#H# For the overlay filesystem for /system, this is, for example, the file ./upper/system/relabel. I
 #H# 
 #H# If the parameter “--norelabel” is specified, the “relabel” files are ignored.
 #H# 
@@ -193,6 +194,7 @@
 #
 #   01.08.2026 /bs v1.5.0
 #     added the parameter "--run" to execute post installation scripts or executables
+#     added the parameter "mount_existing" to only mount the overlay filesystems that already exist on the virtual disk
 #     the code to relabel the files and directories was rewritten from scratch
 #     the automatically relabeling of the overlay filesystem is now disabled
 #     now an overlay filesystem is automatically relabeled if the file ./upper/<dir_name>/relabel exists 
@@ -1110,11 +1112,11 @@ function format_virtual_disk {
         if [ ${TEMPRC} -eq 0 ] ; then
           THISRC=0
         else
-          LogError "Error creating a filesystem on the imagefile \"${CUR_IMAGE_FILE}\" "
+          LogError "Error creating a filesystem on the image file \"${CUR_IMAGE_FILE}\" "
           THISRC=1
         fi
       else
-        LogError "The imagefile \"${CUR_IMAGE_FILE}\" does not exist"
+        LogError "The image file \"${CUR_IMAGE_FILE}\" does not exist"
         THISRC=3
       fi
     else
@@ -1257,7 +1259,7 @@ function mount_virtual_disk {
     LOOP_DEVICE="${CUR_DEVICE}"
     LogInfo "\"${BASEDIR}\" is already mounted on the loop device \"${LOOP_DEVICE}\" "
   else
-    LogMsg "Mounting the imagefile \"${IMAGE_FILE}\" to \"${BASEDIR}\" ..."
+    LogMsg "Mounting the image file \"${IMAGE_FILE}\" to \"${BASEDIR}\" ..."
 
     [[ ${VERBOSE} = ${__TRUE} ]] && set -x 
 
@@ -2633,7 +2635,11 @@ if [ $# -ne 0 ] ; then
       mount_only )
         [ "${ACTION}"x != ""x ] && die 101 "Duplicate action parameter found (\"${ACTION}\" and \"${CUR_PARAMETER}\") "
         ACTION="mount_only"
+        ;;
 
+      mount_existing )
+        [ "${ACTION}"x != ""x ] && die 101 "Duplicate action parameter found (\"${ACTION}\" and \"${CUR_PARAMETER}\") "
+        ACTION="mount_existing"
         ;;
 
       test )
@@ -2993,35 +2999,48 @@ case ${ACTION} in
     MAIN_RC=$?
     ;;
 
-  mount | mount_only )
+  mount | mount_only | mount_existing )
     if [ ${INIT_DISK} = ${__TRUE} ] ; then
       LogMsg "Initializing the virtual disk requested -- now umounting all overlay filesystems ..."
       umount_overlay_mounts || \
         die 100 "init disk requested but umounting the overlay filesystems failed"
     fi
 
-
     LogInfo "### Now the action starts ..."
 #
 # create the image file
 #
     mount_virtual_disk
+ 
+#
+# get the list of overlay directories in the virtual disk
+#
+    DIR_LIST="$( cd "${BASEDIR}/upper" && ls | sed "s#^#/#g" | tr "\n" " "   )"
+
+    if [ "${ACTION}"x = "mount_existing"x ] ; then
+      LogInfo "Only mount the existing overlay directories on the virtual disk .."
+      DIRS_TO_OVERLAY="$( echo "${DIR_LIST}" | tr "#" "/" )"
+      LogInfo "Now mounting the overlay directories for the directories \"${DIRS_TO_OVERLAY}\" ..."
+      
+      if [ "${DIRS_TO_OVERLAY}"x = ""x ] ; then
+        die 95 "There are no overlay directories on the virtual disk"
+      fi
+    fi
 
 #       
 # correct the SELinux context for the files and directories in the ./upper dir with unlabeled SELinux context
 #
     create_overlay_directory_tree
 
-#
-# get the list of overlay directories in the virtual disk
-#
-    DIR_LIST="$( cd "${BASEDIR}/upper" && ls | sed "s#^#/#g" | tr "\n" " "   )"
     
     LogInfo "Checking for overlay directories that should be relabeled ..."
 
     LogInfo "DIRS_TO_OVERLAY is \"${DIRS_TO_OVERLAY}\" "
     
     DIRS_TO_RELABEL=""
+    
+
+    
     if [ "${ACTION}"x = "mount_only"x ] ; then
 #
 # option "--relabel" and action "mount_only" --> relabel all overlay filesystems on the virtual disk
@@ -3088,7 +3107,7 @@ case ${ACTION} in
       create_overlay_mounts
 
 #
-# execute the post installaton commands if there are any defined
+# execute the post installation commands if there are any defined
 #
       if [ "${EXECUTABLES_TO_RUN}"x != ""x ] ; then
         for CUR_EXECUTABLE in ${EXECUTABLES_TO_RUN} ; do
