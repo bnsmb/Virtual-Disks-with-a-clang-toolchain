@@ -95,6 +95,10 @@
 #H# - fully qualified names are searched in "/",  e.g /system_ext/bin/rsync -> /system_ext/bin/rsync
 #H# 
 #H#
+#H# For virtual disks created in Android, the following information can be ignored.
+#H#
+#H# --------------------------------------------------------------------
+#H#
 #H# For virtual disks created on operating systems other than Android, the SELinux context for most files and directories on the virtual disk is
 #H# “system_u:object_r:unlabeled_t:s0” or “unconfined_u:object_r:default_t:s0” or something similar. Because of this SELinux context, these files 
 #H# cannot be accessed by users without root privileges. 
@@ -104,16 +108,19 @@
 #H# 
 #H# If the “--relabel” parameter is specified, the script corrects the SELinux context for all files in the overlay directories for all 
 #H# directories specified in the parameters for the script. The SELinux context used for this modification is the SELinux context of the
-#H# target directory for the overlay mount. The scriipt modifies only the files with an SELinux context that matches the expression
-#H# "*:unlabeled*" or "*:default:*"
+#H# target directory for the overlay mount. The script modifies only the files with an SELinux context that matches the expression
+#H# "*:unlabeled*" or "*:default:*"-.
 #H#
-#H# 
 #H# If the SELinux context of the files is to be corrected only for certain overlay file systems, the file “relabel” can be created in 
 #H# those directories. In this case, the “--relabel” parameter must not be specified.
 #H# 
+#H# To relabel the files in the overlay filesystem with other SELinux contexts, create a script to change the SELinux context and
+#H# run it as post install script using the parameter "--run=script". The script can also be located on the overlay filesystem.
+#H# Do not use the parameter "--relabel" in this case.
+#H# 
 #H# For the overlay filesystem for /system, this is, for example, the file ./upper/system/relabel. I
 #H# 
-#H# If the “--norelabel” parameter is specified, the “relabel” files are ignored.
+#H# If the parameter “--norelabel” is specified, the “relabel” files are ignored.
 #H# 
 #H# To correct the SELinux contexts in all overlay filesystems on the virtual disk, the following script command can also be used:
 #H# 
@@ -129,6 +136,8 @@
 #H# the code to change the SELInux context for the files is executed each time the virtual disk is mounted.
 #H#
 #H# For virtual disks created under Android, no correction is necessary.
+#H#
+#H# --------------------------------------------------------------------
 #H#
 #H#
 #H# Notes
@@ -182,9 +191,11 @@
 #     the script now prints a warning if an unknown environment variable is used in the parameter
 #     corrected the code to relabel unlabeled files and directories (the previous code failed for symbolic links)
 #
-#   31.07.2026 /bs v1.5.0
+#   01.08.2026 /bs v1.5.0
 #     added the parameter "--run" to execute post installation scripts or executables
 #     the code to relabel the files and directories was rewritten from scratch
+#     the automatically relabeling of the overlay filesystem is now disabled
+#     now an overlay filesystem is automatically relabeled if the file ./upper/<dir_name>/relabel exists 
 #
 # ----------------------------------------------------------------------
 
@@ -3043,16 +3054,20 @@ case ${ACTION} in
       fi
 
       RELABEL_THIS_DIR=${__FALSE}
-      if [  -r "${BASEDIR}/upper${CUR_DIR}/relabel" ] ; then
+      
+      RELABEL_FILE_NAME="${CUR_DIR}/relabel"
+      RELABEL_FILE="${BASEDIR}/upper${RELABEL_FILE_NAME}"
+      
+      if [  -r "${RELABEL_FILE}" ] ; then
         if [ "${ACTION}"x = "mount_only"x ] ; then
 #
 # action "mount_only" without the option "--relabel" -> do not relabel any file
 #        
           :  
         elif [ ${NO_LABEL_PARAMETER_FOUND} = ${__TRUE} ] ; then
-          LogInfo "File \"${BASEDIR}/upper${CUR_DIR}/relabel\" found but parameter \"--no_relabel\" was used -- skipping this directory "
+          LogInfo "File \"${RELABEL_FILE_NAME}\" found but parameter \"--no_relabel\" was used -- skipping this directory "
         else
-          LogInfo "File \"${BASEDIR}/upper${CUR_DIR}/relabel\" found - will relabel this directory "
+          LogMsg "File \"${RELABEL_FILE_NAME}\" found - will relabel this directory "
           RELABEL_THIS_DIR=${__TRUE}
         fi
       fi
