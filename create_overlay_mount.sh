@@ -30,50 +30,50 @@
 #H# 
 #H# The known option parameter are:
 #H# 
-#H# --version    print the script version and exit
-#H# --verbose    print more messages
-#H# --noselinux  disable SELinux at start of the script (SELinux is NOT enabled again by the script)
-#H# --selinux    enable SELinux at start of the script (SELinux is NOT disabled again by the script)
-#H# --no_relabel do not modify the SELinux context for files with unlabeled or default SELinux context in the overlay filesystem
-#H# --relabel    modify the SELinux context for files with unlabeled or default SELinux context in the overlay filesystems
-#H#              The default is not to relabel. 
-#H# --initdisk   format the virtual disk before creating the overlay mounts; this will undo all previous changes in the filesystems
-#H#              Without this option the script never formats an existing virtual disk.
-#H# --details    print more details
-#H# --short      print only the important information
-#H# --active     the tasks diff, get, and undo should work only on the currently mounted overlay filesystems
-#H# --nomagisk   do not create temporary bind mounts for the Magisk binaries; without this parameter the script creates temporary
-#H#              bind mounts for the executables magisk, su, and resetprop if Magisk is installed and the bind mount 
-#H#              should be created for the directory "/system".
-#H#              The bind mounts are created in the directory "/data/local/tmp"; to use another directory for the bind mounts set the environment variable
-#H#              BIND_MOUNT_TARGET_DIR="<directory_name>"
-#H#              To create bind mounts for additional files before creating the overlay mount for "/system", add the filenames to the variable FILES_TO_KEEP 
-#H#              (see below for details); the files must exist and bind mounts for directories are not supported.
-#H# --run        run the executable "script" if it exists after the overlay mounts are inplace. "script" can be any executable.
-#H#              The parameter can be used multiple times; Note that "--script" is an alias for "--run".
+#H# --version      print the script version and exit
+#H# --verbose      print more messages
+#H# --noselinux    disable SELinux at start of the script (SELinux is NOT enabled again by the script)
+#H# --selinux      enable SELinux at start of the script (SELinux is NOT disabled again by the script)
+#H# --no_relabel   do not modify the SELinux context for files with unlabeled or default SELinux context in the overlay filesystem
+#H# --relabel      modify the SELinux context for files with unlabeled or default SELinux context in the overlay filesystems
+#H#                The default is not to relabel. 
+#H# --initdisk     format the virtual disk before creating the overlay mounts; this will undo all previous changes in the filesystems
+#H#                Without this option the script never formats an existing virtual disk.
+#H# --details      print more details
+#H# --short        print only the important information
+#H# --active       the tasks diff, get, and undo should work only on the currently mounted overlay filesystems
+#H# --nomagisk     do not create temporary bind mounts for the Magisk binaries; without this parameter the script creates temporary
+#H#                bind mounts for the executables magisk, su, and resetprop if Magisk is installed and the overlay filesystem
+#H#                should be created for the directory "/system".
+#H#                The bind mounts are created in the directory "/data/local/tmp"; to use another directory for the bind mounts set the environment variable
+#H#                BIND_MOUNT_TARGET_DIR="<directory_name>"
+#H#                To create bind mounts for additional files before creating the overlay mount for "/system", add the filenames to the variable FILES_TO_KEEP 
+#H#                (see below for details); the files must exist and bind mounts for directories are not supported.
+#H# --run          run the executable "script" if it exists after the overlay mounts are inplace. "script" can be any executable.
+#H#                The parameter can be used multiple times; Note that "--script" is an alias for "--run".
 #H#
 #H# The known action parameter are:
 #H#
-#H# help         print verbose usage help
-#H# vars         print only the list of supported environment variables
-#H# list         list directories mounted on overlay filesystems
-#H# test         test write access to directories mounted on overlay filesystems; 
-#H#              default is: test write access to all directories currently mounted on an overlay filesystems
-#H# get          print the name of the backend used for a file or directory mounted on an overlay filesystem
-#H# undo         delete all changes done in a directory with an overlay mount
-#H#              default is: delete all changes done for all directories in the environment variable DIRS_TO_OVERLAY (regardless of the mount status)
-#H# diff         list the file changes for directories with overlay mounts
-#H#              default is: list the changes done for all directories in the environment variable DIRS_TO_OVERLAY (regardless of the mount status)
-#H# restore      restore a file or directory mounted on an overlay filesystem
+#H# help           print verbose usage help
+#H# vars           print only the list of supported environment variables
+#H# list           list directories mounted on overlay filesystems
+#H# test           test write access to directories mounted on overlay filesystems; 
+#H#                default is: test write access to all directories currently mounted on an overlay filesystems
+#H# get            print the name of the backend used for a file or directory mounted on an overlay filesystem
+#H# undo           delete all changes done in a directory with an overlay mount
+#H#                default is: delete all changes done for all directories in the environment variable DIRS_TO_OVERLAY (regardless of the mount status)
+#H# diff           list the file changes for directories with overlay mounts
+#H#                default is: list the changes done for all directories in the environment variable DIRS_TO_OVERLAY (regardless of the mount status)
+#H# restore        restore a file or directory mounted on an overlay filesystem
 #H#
-#H# mount_only   mount the virtual disk and exit
+#H# mount_only     mount the virtual disk and exit
 #H#
-#H# mount        mount the overlays for the directories
+#H# mount          mount the overlays for the directories
 #H# mount_existing mount only the existing overlay filesystems on the virtual disk
-#H# umount       umount the overlays for the directories; default is to umount all overlays
-#H# remount      remount the overlay mounts
+#H# umount         umount the overlays for the directories; default is to umount all overlays
+#H# remount        remount the overlay mounts
 #H#
-#H# clean        umount all overlay mounts and umount the virtual disk
+#H# clean          umount all overlay mounts and umount the virtual disk
 #H#
 #H# The script does not relabel files if the parameter "mount_only" is used (even if there are relabel files in the overlay filesystems).
 #H# To force relabeling the files when "mount_only" is used, add the option "--relabel"
@@ -192,7 +192,7 @@
 #     the script now prints a warning if an unknown environment variable is used in the parameter
 #     corrected the code to relabel unlabeled files and directories (the previous code failed for symbolic links)
 #
-#   01.08.2026 /bs v1.5.0
+#   01.08.2026 /bs v1.5.0 beta
 #     added the parameter "--run" to execute post installation scripts or executables
 #     added the parameter "mount_existing" to only mount the overlay filesystems that already exist on the virtual disk
 #     the code to relabel the files and directories was rewritten from scratch
@@ -955,11 +955,14 @@ function set_selinux_context_for_files {
   
   LogInfo "The overlay directory is \"${OVERLAY_DIR}\" "
   LogInfo "The target directory is  \"${TARGET_DIR}\" "
-  
-  if [ ! -d "${OVERLAY_DIR}" ] ; then
-    LogWarning "The overlay directdory \"${OVERLAY_DIR}\" does not exist" 
+
+  if [ "${OVERLAY_DIR}"x = ""x -o "${TARGET_DIR}"x = ""x  ] ; then
+    LogError "${__FUNCTION} called with missing parameter, the parameter for the function are: \"$*\" "
+    THISRC=${__FALSE}
+  elif [ ! -d "${OVERLAY_DIR}" ] ; then
+    LogWarning "The overlay directory \"${OVERLAY_DIR}\" does not exist" 
   elif [ ! -d "${TARGET_DIR}" ] ; then
-    LogWarning "The target directdory \"${TARGET_DIR}\" does not exist" 
+    LogWarning "The target directory \"${TARGET_DIR}\" does not exist" 
   else
 
     NEW_SELINUX_CONTEXT="$( stat -c %C "${TARGET_DIR}" )"
@@ -988,9 +991,9 @@ function set_selinux_context_for_files {
       THISRC=${__TRUE}
     else
       if [ "$( getenforce )"x = "Enforcing"x ] ;then
-        die 95 "Error correcting the SELinux contexts for the overlay filesystem for \"${OVERLAY_DIR}\""
+        die 95 "Error correcting the SELinux contexts in the directory \"${OVERLAY_DIR}\""
       else
-        LogError "Error correcting the SELinux contexts. SELinux is currently disabled. Please check the SELinux context for the files in the overlay filesystem \"${OVERLAY_DIR}\""
+        LogError "Error correcting the SELinux contexts. SELinux is currently disabled. Please check the SELinux context for the files in the directory  \"${OVERLAY_DIR}\""
        fi
     fi    
   fi
