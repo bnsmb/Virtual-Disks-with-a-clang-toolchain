@@ -69,8 +69,10 @@ ASUS_I006D:/data/local/tmp $
 **Note:**
 
 The file **/system/relabel** exists in this overlay filesystem. Therefore, the script **create_overlay_mount.sh** corrects the SELinux context for all files and directories in the overlay filesystem with an invalid SELinux context.
+Depending on the number of files and directories on the disk, this may take some time. 
 
-Depending on the number of files and directories on the disk, this may take some time. To disable this check for the further reboots, you can delete the file **/system/relabel**. To enable the check again for the next mount of the virtual disk, simply recreate the file:
+This correction needs to be made only once. To disable this check for the further reboots, you can delete the file **/system/relabel**. To enable the check again for the next mount of the virtual disk, simply recreate the file **/system/relabel**:
+
 ```
 touch /system/relabel
 ```
@@ -503,6 +505,90 @@ To umount the virtual disk again execute this command.
 su - -c /data/local/tmp/create_overlay_mount.sh clean
 ```
 
+
+To add an overlay filesystem for another directory to the virtual disk, execute this command:
+
+```
+create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image <directory>
+```
+
+For example, to add an overlay filesystem for the directory **/system_ext** to the virtual disk:
+
+<details><summary><b>./create_overlay_mount.sh IMAGE_FILE=perl544_and_clang_virtual_image /system_ext</b></summary>
+
+ ```
+ASUS_I006D:/data/local/tmp # ./create_overlay_mount.sh IMAGE_FILE=perl544_and_clang_virtual_image /system_ext
+The image file "perl544_and_clang_virtual_image" already exists - there should already be a filesystem on the disk
+
+Creating and mounting the directories for the overlay mount for "/system_ext" ...
+Creating the directory "/dev/ov/upper/system_ext" ...
+Creating the directory "/dev/ov/merged/system_ext" ...
+Creating the directory "/dev/ov/work/system_ext" ...
+Creating the overlay mount for "/system_ext" ...
+Creating the bind mount "/system_ext"...
+Checking the overlay mount for "/system_ext" ...
+
+Summary:
+--------
+
+1 overlay mount(s) created:
+
+  /system_ext
+
+ASUS_I006D:/data/local/tmp $ 
+```
+
+</details>
+
+
+Now there are overlay filesystems for **/system** and **/system_ext** on the virtual disk.
+
+To mount both overlay filesystems again after a reboot use the script **create_overlay_mount.sh** with the parameter mount_existing:
+
+```
+create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image mount_existing
+```
+
+**Example:**
+
+<details><summary><b>create_overlay_mount.sh IMAGE_FILE=/data/local/tmp/perl544_and_clang_virtual_image mount_existing</b></summary>
+
+ ```
+ASUS_I006D:/data/local/tmp # ./create_overlay_mount.sh IMAGE_FILE=perl544_and_clang_virtual_image mount_existing  
+The image file "perl544_and_clang_virtual_image" already exists - there should already be a filesystem on the disk
+Mounting the imagefile "perl544_and_clang_virtual_image" to "/dev/ov" ...
+File "/system/relabel" found - will relabel this directory
+Now correcting the SELinux context for all files and directories with the SELinux context "*:unlabeled*:*" or "*:default*:*" in the directory "/dev/ov/upper/system" to "u:object_r:system_file:s0" ...
+This may take some minutes - please be patient
+... SELinux context for the files successfully modified
+
+Creating and mounting the directories for the overlay mount for "/system" ...
+
+Creating the overlay mount for "/system" ...
+Creating the bind mount "/system"...
+Checking the overlay mount for "/system" ...
+
+Creating and mounting the directories for the overlay mount for "/system_ext" ...
+Creating the overlay mount for "/system_ext" ...
+Creating the bind mount "/system_ext"...
+Checking the overlay mount for "/system_ext" ...
+
+Summary:
+--------
+
+2 overlay mount(s) created:
+
+  /system
+  /system_ext
+
+ASUS_I006D:/data/local/tmp #
+```
+
+</details>
+
+
+<hr></hr>
+
 The documentation for the script **create_overlay_mount.sh** is [here](https://bnsmb.de/android/Documentation_for_the_script_create_overlay_mount.sh.html).
 
 
@@ -532,5 +618,12 @@ add or modify the files in your local repository if necessary, and create the vi
 ```
 The script creates the virtual disk in /tmp: **/tmp/perl544_and_clang_virtual_image**
 
-You should only modify or add files in the directory **./image/upper/system** in the repository, this is the overlay for **/system** on the phone. Do **NOT** add files to the other directories in the repository.
+The usage for the script **./create_virtual_disk.sh** is:
+```
+[xtrnaw7@t15g /data/develop/git_repos/Virtual-Disks-with-a-clang-toolchain]$ ./create_virtual_disk.sh  -h
+Usage: ./create_virtual_disk.sh [IMAGE_SIZE=n] [IMAGE_FILE=file] [MOUNT_POINT=mount_point]
+[xtrnaw7@t15g /data/develop/git_repos/Virtual-Disks-with-a-clang-toolchain]$ 
+```
+
+You should only modify or add files in the sub directories in **./image/upper** in the repository. For example, **./image/upper/system** is the overlay filesystem for **/system** on the phone. Do **not** add files to the other directories in the repository.
 
