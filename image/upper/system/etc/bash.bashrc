@@ -4,7 +4,8 @@
 export host=android
 export HOME=/
 export HOSTNAME=$(getprop ro.product.device)
-export TERM=xterm
+#export TERM=xterm
+export TERM=vt100
 export TMPDIR=/data/local/tmp
 export USER=$(id -un)
 export TERMINFO=/system/usr/share/terminfo
@@ -97,7 +98,7 @@ blank="\e[m\]"
 
 # Sexy af PS1
 rootcheck
-export PS1="${green}┌|\@${cyan} ${USER}${purple} at ${HOSTNAME} in \W \n${green}└─${blank} \$ "
+export PS1="${green}┌|\@${cyan} ${USER}${purple} at ${HOSTNAME} in \w \n${green}└─${blank} \$ "
 
 # Load user defined bashrc if it exists
 [ -f /data/local/tmp/home/bashrc ] && . /data/local/tmp/home/bashrc
