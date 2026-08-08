@@ -21,6 +21,8 @@
 #    the script now prints warning messages if the directories from the NDK are missing
 #  27.07.2026 v1.2.1 /bs
 #    added code to modify the prompt (PS1)
+#  08.08.2026 v1.2.2 /bs
+#    the script now executes "exec bash" if called as normal script (not sourced in)
 #
 
 __TRUE=0
@@ -538,3 +540,6 @@ clang++ \${CXXFLAGS} \${LDFLAGS}  -o helloworld_in_c++ ./helloworld_in_c++.cpp &
 fi
 
 echo "$PS1" | egrep "clang19 vdisk" >/dev/null || export PS1="[clang19 vdisk env] $PS1"
+
+[[ $0 = *init_clang19_env ]] && exec /system/usr/bin/bash
+
