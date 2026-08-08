@@ -387,7 +387,7 @@ ASUS_I006D:/ $
 </details>
 <br>
 
-<details><summary><b>ls image/upper/system/usr/lib</b></summary>
+<details><summary><b>ls image/upper/system/usr/include</b></summary>
 
 ```
 ASUS_I006D:/ $ ls -l /system/usr/include
